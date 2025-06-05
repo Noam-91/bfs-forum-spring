@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id-on-route: true
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**, /internal/users/**
+        - id: catalog-service
+          uri: lb://catalog-service
+          predicates:
+            - Path=/products/**, /internal/products/**
+        - id: core-service
+          uri: lb://core-service
+          predicates:
+            - Path=/orders/**, /cart/**, /watchlist/**, /stats/**, /internal/orders/**
+        - id: assistant-service
+          uri: lb://assistant-service
+          predicates:
+            - Path=/assistant
+
+  # Spring Security OAuth2 Resource Server Configuration for JWT
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Configure the JWK Set URI where the public keys are exposed by the JWT issuer
+          jwk-set-uri: http://localhost:8081/oauth2/jwks
