@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.bfsforum</groupId>
-    <artifactId>history-serivce</artifactId>
+    <artifactId>history-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>history-serivce</name>
     <description>history-serivce</description>
