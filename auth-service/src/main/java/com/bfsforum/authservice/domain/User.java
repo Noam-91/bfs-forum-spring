@@ -1,5 +1,6 @@
 package com.bfsforum.authservice.domain;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,26 +10,27 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
-
 @Data
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
   @GeneratedValue(generator = "UUID")
+  @Schema(type = "string", format = "uuid")
   private String id;
+
+  @Schema(type = "string", description = "Email", example = "ny@bfs.com")
   private String username;
+
+  @Schema(type = "string")
   private String password;
+
+  @Schema(type = "string", description = "Role", example = "UNVERIFIED, USER, ADMIN, SUPER_ADMIN")
   private String role;
+
   @Column (name = "is_active")
   private Boolean isActive;
-  @Column(name = "created_at", insertable = false)
-  private Timestamp createdAt;
-  @Column(name = "updated_at", insertable = false)
-  private Timestamp updatedAt;
-  @Column(name = "updated_by")
-  private Long updatedBy;
 }
