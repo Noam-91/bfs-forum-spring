@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 0
 
 eureka:
   client:
@@ -8,7 +8,7 @@ eureka:
 
 spring:
   application:
-    name: auth-service
+    name: message-service
   datasource:
     url: jdbc:mysql://localhost:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
