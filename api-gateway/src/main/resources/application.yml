@@ -5,6 +5,7 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+
 spring:
   application:
     name: api-gateway
@@ -15,22 +16,10 @@ spring:
           enabled: true
           lower-case-service-id-on-route: true
       routes:
-        - id: user-service
-          uri: lb://user-service
+        - id: auth-service
+          uri: lb://auth-service
           predicates:
-            - Path=/users/**, /internal/users/**
-        - id: catalog-service
-          uri: lb://catalog-service
-          predicates:
-            - Path=/products/**, /internal/products/**
-        - id: core-service
-          uri: lb://core-service
-          predicates:
-            - Path=/orders/**, /cart/**, /watchlist/**, /stats/**, /internal/orders/**
-        - id: assistant-service
-          uri: lb://assistant-service
-          predicates:
-            - Path=/assistant
+            - Path=/auth/**
 
   # Spring Security OAuth2 Resource Server Configuration for JWT
   security:

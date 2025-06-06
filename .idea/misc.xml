@@ -12,7 +12,6 @@
         <option value="$PROJECT_DIR$/history-serivce/pom.xml" />
         <option value="$PROJECT_DIR$/post-service/pom.xml" />
         <option value="$PROJECT_DIR$/message-service/pom.xml" />
-        <option value="$PROJECT_DIR$/file-service/pom.xml" />
         <option value="$PROJECT_DIR$/email-service/pom.xml" />
       </list>
     </option>
