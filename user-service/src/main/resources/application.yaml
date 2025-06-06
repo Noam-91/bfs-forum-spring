@@ -1,0 +1,16 @@
+#spring:
+#  cloud:
+#    function:
+#      definition: ... #Function name in the PaymentConsumerConfig class
+#    stream:
+#      bindings:
+#        paymentProcessor-in-0: #Kafka topic name to consume the message from
+#          destination: ...
+#        paymentProcessor-out-0: #Kafka topic name to produce the message to
+#          destination: ...
+
+database:
+  url: jdbc:mysql://localhost:3306/bfsforum
+  driver: com.mysql.cj.jdbc.Driver
+  username: root
+  password: H7z0j41996
