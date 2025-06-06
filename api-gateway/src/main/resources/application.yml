@@ -19,7 +19,11 @@ spring:
         - id: auth-service
           uri: lb://auth-service
           predicates:
-            - Path=/auth/**
+            - Path=/auth/**, /auth
+        - id: message-service
+          uri: lb://message-service
+          predicates:
+            - Path=/messages/**
 
   # Spring Security OAuth2 Resource Server Configuration for JWT
   security:
