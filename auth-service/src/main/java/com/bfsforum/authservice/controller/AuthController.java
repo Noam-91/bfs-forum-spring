@@ -4,6 +4,10 @@ import com.bfsforum.authservice.domain.User;
 import com.bfsforum.authservice.dto.LoginRequest;
 import com.bfsforum.authservice.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +29,12 @@ public class AuthController {
 
   @PostMapping("/login")
   @Operation(summary = "Login", description = "Login to the system.")
+  @ApiResponse(responseCode = "200", description = "Login successful",
+      content = @Content(mediaType = "application/json",
+      examples = @ExampleObject(value = "{ \"message\": \"Login Successfully\" }")))
+  @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid credentials",
+      content = @Content(mediaType = "application/json",
+      examples = @ExampleObject(value = "{ \"message\": \"Invalid credentials\" }")))
   public ResponseEntity<Map<String,String>> login(@RequestBody LoginRequest loginRequest,
                                                   HttpServletResponse response){
     try{
@@ -37,7 +47,8 @@ public class AuthController {
       response.addCookie(cookie);
       return ResponseEntity.ok(Map.of("message", "Login Successfully"));
     }catch (Exception e){
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
     }
   }
+
 }

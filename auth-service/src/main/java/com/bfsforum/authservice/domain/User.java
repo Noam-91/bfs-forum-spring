@@ -17,6 +17,7 @@ import java.sql.Timestamp;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
   @GeneratedValue(generator = "UUID")
