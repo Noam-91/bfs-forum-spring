@@ -40,18 +40,14 @@ public class AuthController {
       examples = @ExampleObject(value = "{ \"message\": \"Invalid credentials\" }")))
   public ResponseEntity<Map<String,String>> login(@Valid @RequestBody LoginRequest loginRequest,
                                                   HttpServletResponse response){
-    try{
-      String token = authService.loginAndIssueToken(loginRequest);
-      // Save token into httpOnly cookie.
-      Cookie cookie = new Cookie("token", token);
-      cookie.setHttpOnly(true);
-      cookie.setPath("/");
-      cookie.setMaxAge(36000);          // 10 hours
-      response.addCookie(cookie);
-      return ResponseEntity.ok(Map.of("message", "Login Successfully"));
-    }catch (Exception e){
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
-    }
+    String token = authService.loginAndIssueToken(loginRequest);
+    // Save token into httpOnly cookie.
+    Cookie cookie = new Cookie("token", token);
+    cookie.setHttpOnly(true);
+    cookie.setPath("/");
+    cookie.setMaxAge(36000);          // 10 hours
+    response.addCookie(cookie);
+    return ResponseEntity.ok(Map.of("message", "Login Successfully"));
   }
 
   @PostMapping("/logout")
@@ -84,18 +80,8 @@ public class AuthController {
           required = true,
           schema = @Schema(type = "string", format = "uuid", example = "a1b2c3d4-e5f6-7890-1234-567890abcdef"))
       @RequestHeader(value = "X-User-Id") String userId){
-    try{
-      User user = authService.findUserById(userId);
-      return ResponseEntity.ok(user);
-    } catch (RuntimeException e){
-      // If user not found, clear the cookie and return 401
-      log.info("User not found: {}", userId);
-      Cookie cookie = new Cookie("token", null);
-      cookie.setHttpOnly(true);
-      cookie.setPath("/");
-      cookie.setMaxAge(0);
-      response.addCookie(cookie);
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
-    }
+
+    User user = authService.findUserById(userId);
+    return ResponseEntity.ok(user);
   }
 }
