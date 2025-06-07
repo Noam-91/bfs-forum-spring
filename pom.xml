@@ -11,17 +11,17 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.0</version>
+        <version>3.4.5</version>
     </parent>
 
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-cloud.version>2024.0.1</spring-cloud.version>
-        <lombok.version>1.16.18</lombok.version>
+        <lombok.version>1.18.32</lombok.version>
         <mysql.version>8.0.33</mysql.version>
-        <hibernate.version>6.4.4.Final</hibernate.version>
-        <spring-boot-starter>3.5.0</spring-boot-starter>
+        <spring-boot-starter>3.4.5</spring-boot-starter>
+        <swagger.version>2.8.8</swagger.version>
     </properties>
 
     <dependencyManagement>
@@ -45,6 +45,12 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${swagger.version}</version>
             </dependency>
 
             <dependency>
