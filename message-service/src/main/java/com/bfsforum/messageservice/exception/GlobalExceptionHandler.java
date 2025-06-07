@@ -1,6 +1,7 @@
 package com.bfsforum.messageservice.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleBadRequestException(BadRequestException ex) {
         log.error("BadRequestException: {}", ex.getMessage());
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    /** Exception in JDBC **/
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Object> handleException(ConstraintViolationException ex) {
+        log.debug(ex.getMessage());
+        return ResponseEntity.internalServerError().body(INTERNAL_SERVER_ERROR_MESSAGE);
     }
 
     @ExceptionHandler(RuntimeException.class)

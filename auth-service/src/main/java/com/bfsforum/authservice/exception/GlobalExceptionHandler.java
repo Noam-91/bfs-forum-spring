@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<Object> handleException(ConstraintViolationException ex) {
         log.debug(ex.getMessage());
-        return ResponseEntity.internalServerError().body(INTERNAL_SERVER_ERROR_MESSAGE);
+        return ResponseEntity.badRequest().body(ex.getMessage());
     }
 
     /** Exception in Authentication **/
