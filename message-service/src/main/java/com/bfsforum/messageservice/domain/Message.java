@@ -22,18 +22,21 @@ public class Message {
   @Schema(type = "string", format = "uuid")
   private String id;
 
-  @Schema(description = "User Id", type = "string", format = "uuid")
-  @Column(name = "user_id", nullable = false)
-  private String userId;
-
   @NotBlank
+  @Schema(description = "User email", example = "ny@bfs.com")
   private String email;
 
+  @Schema(description = "Message title", example = "I have a question")
   @NotBlank
+  private String subject;
+
+  @NotBlank
+  @Schema(description = "Message body")
   private String content;
 
   @Schema(description = "Message status", example = "SOLVED, UNSOLVED")
-  private String status;
+  @Enumerated(EnumType.STRING)
+  private Status status;
 
   @Schema(description = "Message created at", example = "2021-01-01 00:00:00")
   @Column(name = "created_at", insertable = false, updatable = false)
