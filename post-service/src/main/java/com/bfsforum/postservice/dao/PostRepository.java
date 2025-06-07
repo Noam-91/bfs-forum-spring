@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.List;
  * @author luluxue
  * @date 2025-06-06
  */
+
+@Repository
 public interface PostRepository extends MongoRepository<Post, String> {
 	
 	Page<Post> findAll(Pageable pageable);
@@ -23,6 +26,8 @@ public interface PostRepository extends MongoRepository<Post, String> {
 	Page<Post> findByUserId(Long userId, Pageable pageable);
 	
 	Page<Post> findByUserIdAndStatus(Long userId, PostStatus status, Pageable pageable);
+	
+	List<Post> findAllByPostIdIn(List<String> postId);
 	
 	// search post by title or content
 	@Query("{'$or': [{'title': {'$regex': ?0, '$options': 'i'}}, {'content': {'$regex': ?0, '$options': 'i'}}]}")

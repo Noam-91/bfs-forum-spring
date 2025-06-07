@@ -3,6 +3,10 @@ package com.bfsforum.postservice.service;
 import com.bfsforum.postservice.dao.PostRepository;
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.PostStatus;
+import com.bfsforum.postservice.dto.PostCreateDTO;
+import com.bfsforum.postservice.dto.PostResponseDTO;
+import com.bfsforum.postservice.exception.PostNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,9 +23,10 @@ import java.util.Optional;
  */
 
 @Service
+@RequiredArgsConstructor
 public class PostService {
-	@Autowired
-	private PostRepository postRepository;
+	private final PostRepository postRepository;
+	private final KafkaMessageService kafkaMessageService;
 	
 	// retrieve all post
 	public Page<Post> getAllPosts(int page, int size, String sortBy, String sortDir) {
@@ -138,4 +143,40 @@ public class PostService {
 		}
 	}
 	
+//	// add Kafka
+//	@Override
+//	public PostResponseDTO getPostById(String postId, Long viewUserId){
+//		Post post = postRepository.findById(postId)
+//				.orElseThrow(() -> new PostNotFoundException("Post not found with ID: " + postId));
+//
+//		// increase the view counts
+//		post.setViewCount(post.getViewCount() + 1);
+//		postRepository.save(post);
+//
+//		// send event of viewing posts
+//		if (viewUserId != null) {
+//			kafkaMessageService.sendPostViewedEvent(viewUserId, postId);
+//		}
+//
+//		return convertoToResponseDTO(post);
+//	}
+//
+//	@Override
+//	public PostResponseDTO createPost(PostCreateDTO createDTO){
+//		Post post = convertToEntity(createDTO);
+//		post.setCreatedAt(LocalDateTime.now());
+//		post.setUpdatedAt(LocalDateTime.now());
+//
+//		Post savedPost = postRepository.save(post);
+//
+//		// send event of creating posts
+//		kafkaMessageService.sendPostCreatedEvent(
+//				savedPost.getId(),
+//				savedPost.getUserId(),
+//				savedPost.getTitle()
+//		);
+//
+//		return convertToResponseDTO(savedPost);
+//	}
+//
 }
