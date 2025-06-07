@@ -104,7 +104,7 @@
         <module>history-service</module>
         <module>post-service</module>
         <module>message-service</module>
-        <module>file-service</module>
+
         <module>email-service</module>
     </modules>
 

@@ -2,6 +2,7 @@ package com.bfsforum.emailservice.controller;
 
 import com.bfsforum.emailservice.service.EmailService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -20,62 +21,53 @@ class EmailControllerTest {
     @MockitoBean
     private EmailService emailService;
 
-    EmailControllerTest(MockMvc mockMvc, EmailService emailService) {
-        this.mockMvc = mockMvc;
-        this.emailService = emailService;
-    }
+
+
 
     @Test
-    void sendActivationEmail() {
-    }
-
-    @Test
-    void activateUser() {
-    }
-    @Test
-    void testSendActivationEmail_success() throws Exception {
-        String jsonRequest = "{ \"email\": \"test@example.com\" }";
-
-        doNothing().when(emailService).sendActivationEmail("test@example.com");
+    public void testSendActivationEmail_success() throws Exception {
+        String email = "test@example.com";
 
         mockMvc.perform(MockMvcRequestBuilders.post("/email/send-activation")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
+                        .content("{\"email\":\"" + email + "\"}"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.content().string("Activation email sent."));
     }
 
     @Test
-    void testSendActivationEmail_failure() throws Exception {
-        String jsonRequest = "{ \"email\": \"test@example.com\" }";
+    public void testSendActivationEmail_alreadySent() throws Exception {
+        String email = "test@example.com";
 
-        doThrow(new RuntimeException("Email failed")).when(emailService).sendActivationEmail("test@example.com");
+        doThrow(new IllegalStateException("Activation link already sent. Please wait up to 10 minutes."))
+                .when(emailService).sendActivationEmail(email);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/email/send-activation")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
-                .andExpect(MockMvcResultMatchers.status().isInternalServerError())
-                .andExpect(MockMvcResultMatchers.content().string("Failed to send email."));
+                        .content("{\"email\":\"" + email + "\"}"))
+                .andExpect(MockMvcResultMatchers.status().isTooManyRequests())
+                .andExpect(MockMvcResultMatchers.content().string("Activation link already sent. Please wait up to 10 minutes."));
     }
 
     @Test
-    void testActivateUser_validToken() throws Exception {
+    public void testActivateUser_validToken() throws Exception {
         String token = "valid-token";
+        String email = "test@example.com";
 
-        when(emailService.validateToken(token)).thenReturn(true);
-        when(emailService.consumeToken(token)).thenReturn("test@example.com");
+        Mockito.when(emailService.validateToken(token)).thenReturn(true);
+        Mockito.when(emailService.consumeToken(token)).thenReturn(email);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/email/activate")
                         .param("token", token))
-                .andExpect(MockMvcResultMatchers.status().isFound())
-                .andExpect(MockMvcResultMatchers.redirectedUrl("http://yourfrontend.com/home"));
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().string("Account activated for " + email));
     }
 
     @Test
-    void testActivateUser_invalidToken() throws Exception {
-        String token = "invalid-token";
+    public void testActivateUser_invalidToken() throws Exception {
+        String token = "expired-token";
 
-        when(emailService.validateToken(token)).thenReturn(false);
+        Mockito.when(emailService.validateToken(token)).thenReturn(false);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/email/activate")
                         .param("token", token))

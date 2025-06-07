@@ -1,19 +1,11 @@
 package com.bfsforum.emailservice.controller;
 
-import com.bfsforum.emailservice.service.EmailService;
 import com.bfsforum.emailservice.dto.EmailRequest;
-
+import com.bfsforum.emailservice.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.net.URI;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/email")
@@ -27,21 +19,28 @@ public class EmailController {
     try {
       emailService.sendActivationEmail(request.getEmail());
       return ResponseEntity.ok("Activation email sent.");
+    } catch (IllegalStateException e) {
+      return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+              .body(e.getMessage());
     } catch (Exception e) {
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send email.");
+      e.printStackTrace();
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body("Failed to send email: " + e.getMessage());
     }
   }
+
+
 
   @GetMapping("/activate")
   public ResponseEntity<String> activateUser(@RequestParam String token) {
     if (emailService.validateToken(token)) {
       String email = emailService.consumeToken(token);
-      URI redirect = URI.create("http://yourfrontend.com/home");
-      return ResponseEntity.status(HttpStatus.FOUND).location(redirect).build();
+      return ResponseEntity.ok("Account activated for " + email);
     } else {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token.");
     }
   }
+
 }
 
 
