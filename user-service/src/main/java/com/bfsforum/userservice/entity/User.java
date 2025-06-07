@@ -2,8 +2,9 @@ package com.bfsforum.userservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "user")
@@ -13,11 +14,9 @@ import java.util.UUID;
 @Builder
 public class User {
     @Id
-    @GeneratedValue(generator = "UUID")
+    @UuidGenerator
+    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "BINARY(16)")
     private UUID id;
-
-    @Column(unique = true, nullable = false)
-    private String email;
 
     @Column(nullable = false)
     private String password;
@@ -25,11 +24,11 @@ public class User {
     @Column(name = "is_active")
     private boolean isActive = true;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
-
     @Column(unique = true)
     private String username;
+
+    @Column(unique = true)
+    private String email;
 
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;

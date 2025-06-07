@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,23 +44,23 @@ public class UserService {
      * @return The created User entity.
      */
     public User register(UserRegisterRequest dto) {
-        UUID userId = UUID.randomUUID();
-        UUID profileId = UUID.randomUUID();
 
-        UserProfile profile = UserProfile.builder()
-                .id(profileId)
-                .firstName(dto.getFirstName())
-                .lastName(dto.getLastName())
-                .imgUrl(dto.getImgUrl())
-                .build();
 
         User user = User.builder()
-                .id(userId)
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
+                .email(dto.getEmail())
                 .isActive(false)
                 .role(Role.UNVERIFIED)
-                .profile(profile)
+                .build();
+
+        UserProfile profile = UserProfile.builder()
+                .isActive(true)
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .createdAt(LocalDateTime.now())
+                .imgUrl(dto.getImgUrl())
+                .user(user)
                 .build();
 
         user.setProfile(profile);
@@ -109,11 +110,11 @@ public class UserService {
     public void updateProfile(UUID userId, UserProfileDto dto)
             throws UserNotFoundException, UserProfileNotFoundException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
         UserProfile profile = user.getProfile();
         if (profile == null) {
-            throw new UserProfileNotFoundException(userId);
+            throw new UserProfileNotFoundException("User profile not found for user ID: " + userId);
         }
 
         profile.setFirstName(dto.getFirstName());
@@ -132,45 +133,21 @@ public class UserService {
      */
     public void updateUserRole(UUID userId, Role newRole) throws UserNotFoundException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         user.setRole(newRole);
         userRepository.save(user);
     }
 
     /**
-     * Activates a user (sets isActive = true).
+     * Activates or deactivate a user (sets isActive = true or false).
      *
      * @param userId The user's UUID.
      * @throws UserNotFoundException if user not found.
      */
-    public void activateUser(UUID userId) throws UserNotFoundException {
+    public void setUserActivation(UUID userId, boolean isActive) throws UserNotFoundException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        user.setActive(true);
-    }
-
-    /**
-     * Deactivates (bans) a user (sets isActive = false).
-     *
-     * @param userId The user's UUID.
-     * @throws UserNotFoundException if user not found.
-     */
-    public void banUser(UUID userId) throws UserNotFoundException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        user.setActive(false);
-    }
-
-    /**
-     * Soft-deletes a user by marking them inactive.
-     *
-     * @param userId The user's UUID.
-     * @throws UserNotFoundException if user not found.
-     */
-    public void softDeleteUser(UUID userId) throws UserNotFoundException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        user.setActive(false);
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+        user.setActive(isActive);
         userRepository.save(user);
     }
 

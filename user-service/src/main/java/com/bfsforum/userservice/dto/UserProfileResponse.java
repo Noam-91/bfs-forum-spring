@@ -1,6 +1,7 @@
 package com.bfsforum.userservice.dto;
 
 import com.bfsforum.userservice.entity.Role;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Data;
 
