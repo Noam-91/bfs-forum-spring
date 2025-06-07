@@ -14,7 +14,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PostEnrichmentResponse {
+public class PostsEnrichmentResponse {
 	private UUID requestId;
 	private List<PostDTO> posts;
 }

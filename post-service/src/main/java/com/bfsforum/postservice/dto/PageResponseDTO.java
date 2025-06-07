@@ -1,11 +1,9 @@
 package com.bfsforum.postservice.dto;
 
-import com.bfsforum.postservice.domain.PostStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -16,25 +14,26 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PageResponseDTO {
+public class PageResponseDTO<T> {
 	
-	private String id;
-	private Long userId;
-	private String title;
-	private String content;
-	private PostStatus status;
-	private Boolean isArchrived;
-	private LocalDateTime createdAt;
-	private LocalDateTime updatedAt;
-	private Integer viewCount;
-	private Integer replyCount;
+	private List<T> content;
+	private int page;
+	private int size;
+	private long totalElements;
+	private int totalPages;
+	private boolean last;  // is last page
+	private boolean first;  // is first page
+	private boolean empty;
 	
-	private List<String> iamges;
-	private List<String> attachments;
+	public PageResponseDTO(List<T> content, int page, int size, long totalElements) {
+		this.content = content;
+		this.page = page;
+		this.size = size;
+		this.totalElements = totalElements;
+		this.totalPages = (int) Math.ceil((double) totalElements / size);
+		this.last = (page >= totalPages - 1);
+		this.first = (page == 0);
+		this.empty = (content == null || content.isEmpty());
+	}
 	
-	// 回复信息（可选，根据需要包含）
-	private List<ReplyResponseDTO> replies;
-	
-	// 用户信息（从其他服务获取，可选）
-	private UserInfoDTO userInfo;
 }
