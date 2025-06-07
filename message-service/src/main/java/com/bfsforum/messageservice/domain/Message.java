@@ -1,10 +1,7 @@
 package com.bfsforum.messageservice.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,6 +41,7 @@ public class Message {
 
   @Schema(description = "Message updated at", example = "2021-01-01 00:00:00")
   @Column(name = "updated_at", insertable = false)
+  @Version
   private Timestamp updatedAt;
 
   @Schema(description = "Message updated by", type = "string", format = "uuid")

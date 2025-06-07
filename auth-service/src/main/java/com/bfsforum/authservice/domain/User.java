@@ -1,5 +1,6 @@
 package com.bfsforum.authservice.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,6 +27,7 @@ public class User {
   private String username;
 
   @Schema(type = "string")
+  @JsonIgnore
   private String password;
 
   @Schema(type = "string", description = "Role", example = "UNVERIFIED, USER, ADMIN, SUPER_ADMIN")
