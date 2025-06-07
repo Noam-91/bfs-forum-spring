@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.sql.Timestamp;
 
@@ -18,7 +19,7 @@ import java.sql.Timestamp;
 @Schema(name = "Message", description = "User sent message from Contact page", title = "Message")
 public class Message {
   @Id
-  @GeneratedValue(generator = "UUID")
+  @UuidGenerator
   @Schema(type = "string", format = "uuid")
   private String id;
 
@@ -36,7 +37,7 @@ public class Message {
 
   @Schema(description = "Message status", example = "SOLVED, UNSOLVED")
   @Enumerated(EnumType.STRING)
-  private Status status;
+  private Status status= Status.UNSOLVED;
 
   @Schema(description = "Message created at", example = "2021-01-01 00:00:00")
   @Column(name = "created_at", insertable = false, updatable = false)

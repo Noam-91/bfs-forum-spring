@@ -9,5 +9,4 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MessageDao extends JpaRepository<Message, String> {
-  Optional<Message> findById(String id);
 }
