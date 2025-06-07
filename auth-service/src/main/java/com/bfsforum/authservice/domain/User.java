@@ -19,7 +19,6 @@ import lombok.NoArgsConstructor;
 @Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
-  @GeneratedValue(generator = "UUID")
   @Schema(type = "string", format = "uuid")
   private String id;
 
