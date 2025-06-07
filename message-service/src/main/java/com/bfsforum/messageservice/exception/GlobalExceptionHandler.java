@@ -13,6 +13,8 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
+    private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Internal Server Error";
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleNotFoundException(NotFoundException ex) {
         log.error("NotFoundException: {}", ex.getMessage());
@@ -29,5 +31,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleBadRequestException(BadRequestException ex) {
         log.error("BadRequestException: {}", ex.getMessage());
         return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Object> handleRuntimeException(RuntimeException ex) {
+        log.error("RuntimeException: {}", ex.getMessage());
+        return new ResponseEntity<>(Map.of("error", INTERNAL_SERVER_ERROR_MESSAGE), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

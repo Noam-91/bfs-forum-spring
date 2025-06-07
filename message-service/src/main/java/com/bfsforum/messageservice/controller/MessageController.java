@@ -31,7 +31,7 @@ public class MessageController {
    * @param message
    * @return void
    * */
-  @PostMapping("/")
+  @PostMapping("")
   @Operation(summary = "Create Message", description = "Create a new message. VISITOR allowed.")
   @ApiResponse(responseCode = "200", description = "Create message successful",
       content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -40,16 +40,11 @@ public class MessageController {
       content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
       examples = @ExampleObject(value = "{ \"message\": \"Message creation failed\" }")))
   public ResponseEntity<Map<String,String>> createMessage(@RequestBody Message message) {
-    try{
-      messageService.createMessage(message);
-      return ResponseEntity.ok(Map.of("message", "Message has been sent to the admin team."));
-    }catch (Exception e){
-      log.error("create message failed", e);
-      return ResponseEntity.badRequest().body(Map.of("message", "Message creation failed"));
-    }
+    messageService.createMessage(message);
+    return ResponseEntity.ok(Map.of("message", "Message has been sent to the admin team."));
   }
 
-  @GetMapping("/")
+  @GetMapping("")
   @Operation(summary = "Get All Messages", description = "Get all messages. ADMIN / SUPER_ADMIN required.")
   @ApiResponse(responseCode = "200", description = "Get all messages successful",
       content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
@@ -62,13 +57,8 @@ public class MessageController {
       @RequestParam(value = "size", defaultValue = "10") int size,
       @RequestHeader(value = "X-User-Role") String userRole
   ) {
-    try{
-      List<Message> messages = messageService.getAllMessages(page, size, userRole);
-      return ResponseEntity.ok(messages);
-    }catch (Exception e){
-      log.error("get all messages failed", e);
-      return ResponseEntity.badRequest().body(Map.of("message", "Get all messages failed"));
-    }
+    List<Message> messages = messageService.getAllMessages(page, size, userRole);
+    return ResponseEntity.ok(messages);
   }
 
   @PatchMapping("/{id}")
@@ -84,12 +74,7 @@ public class MessageController {
       @RequestHeader(value = "X-User-Id") String userId,
       @RequestHeader(value = "X-User-Role") String userRole
   ) {
-    try{
-      messageService.solveMessage(id, userId, userRole);
-      return ResponseEntity.ok(Map.of("message", "Message has been solved."));
-    }catch (Exception e){
-      log.error("update message failed", e);
-      return ResponseEntity.badRequest().body(Map.of("message", "Message update failed"));
-    }
+    messageService.solveMessage(id, userId, userRole);
+    return ResponseEntity.ok(Map.of("message", "Message has been solved."));
   }
 }
