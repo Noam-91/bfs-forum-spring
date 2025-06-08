@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Configuration
 public class JwtConfig {
-    // Bean to generate an RSA key pair
+    // Bean to generate an RSA key pairF
     @Bean
     public KeyPair keyPair() {
         try {
