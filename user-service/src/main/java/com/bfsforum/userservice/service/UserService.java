@@ -94,6 +94,7 @@ public class UserService {
         return saved;
     }
 
+
     @Value("${bfs-forum.kafka.token-verify-binding-name}")
     private String tokenVerifyBinding;
 
@@ -109,8 +110,9 @@ public class UserService {
         log.info("Send token verification request：correlationId={}, token={}", correlationId, token);
         streamBridge.send(tokenVerifyBinding, message);
 
-        return requestReplyManager.awaitFuture(correlationId, future);
+        return requestReplyManager.awaitFuture(correlationId, future, 86400);
     }
+
 
     /**
      * Retrieves a user by username.

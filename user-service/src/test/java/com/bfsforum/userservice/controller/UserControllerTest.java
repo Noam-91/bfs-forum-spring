@@ -1,5 +1,6 @@
 package com.bfsforum.userservice.controller;
 
+import com.bfsforum.userservice.config.KafkaConsumerConfig;
 import com.bfsforum.userservice.dto.*;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
@@ -29,6 +30,9 @@ class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockitoBean
+    private KafkaConsumerConfig kafkaConsumerConfig;
 
     @MockitoBean
     private UserService userService;
