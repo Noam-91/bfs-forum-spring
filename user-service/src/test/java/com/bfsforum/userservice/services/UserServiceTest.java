@@ -1,7 +1,7 @@
 package com.bfsforum.userservice.services;
 
 import com.bfsforum.userservice.dto.UserProfileDto;
-import com.bfsforum.userservice.dto.UserRegisterRequest;
+import com.bfsforum.userservice.dto.UserRegisterMessage;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.entity.UserProfile;
@@ -44,7 +44,7 @@ class UserServiceTest {
 
     @Test
     void testRegister_success() {
-        UserRegisterRequest dto = new UserRegisterRequest("test", "test123", "test@example.com","admin", "admin", "default.png");
+        UserRegisterMessage dto = new UserRegisterMessage("test", "test123","admin", "admin", "default.png");
 
         when(passwordEncoder.encode("test123")).thenReturn("$2a$11$ifPUemlX2TYtI9NVn9tnr.sZ2DyyMQaJW3DqnRVszm0oKyg.Q.FbG");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));

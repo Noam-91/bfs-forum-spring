@@ -1,8 +1,9 @@
 package com.bfsforum.userservice.controller;
 
+import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserProfileDto;
 import com.bfsforum.userservice.dto.UserProfileResponse;
-import com.bfsforum.userservice.dto.UserRegisterRequest;
+import com.bfsforum.userservice.dto.UserRegisterMessage;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.exceptions.UserNotFoundException;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,7 +42,7 @@ public class UserController {
     @ApiResponse(responseCode = "400", description = "Username already exists",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = "{ \"message\": \"Username already exists\" }")))
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterRequest request) {
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterMessage request) {
         if (userService.usernameExists(request.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Username already exists"));
@@ -50,9 +52,26 @@ public class UserController {
         // emailClient.sendVerification(user.getEmail()); In here I send the request to email service
 
         return ResponseEntity.ok(Map.of("message", "User registered successfully",
-                // todo: might delete this line, for demo purpose
+                // todo: might delete this line, only for demo purpose
                 "userId", user.getId().toString()
         ));
+    }
+
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verify(@RequestParam String token) {
+        try {
+            EmailVerificationReply reply = userService.verifyToken(token);
+
+            if (reply == null || reply.getToken() == null) {
+                return ResponseEntity.badRequest().body("Token invalid or not found");
+            }
+
+            userService.activateVerifiedUser(reply.getUserId(), reply.getExpiresAt());
+            return ResponseEntity.ok("Email verification successful, welcome!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{userId}/profile")

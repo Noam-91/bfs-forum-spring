@@ -9,23 +9,35 @@ import com.bfsforum.userservice.exceptions.UserProfileNotFoundException;
 import com.bfsforum.userservice.repository.UserProfileRepository;
 import com.bfsforum.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.*;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StreamBridge streamBridge;
+    private final RequestReplyManager<EmailVerificationReply> requestReplyManager;
+
 
     /**
      * Checks whether a given username already exists in the database.
@@ -37,19 +49,20 @@ public class UserService {
         return userRepository.existsByUsername(username);
     }
 
+    @Value("${bfs-forum.kafka.user-register-binding-name}")
+    private String userRegisterBinding;
     /**
      * Registers a new user and profile in the system.
      *
      * @param dto The registration request payload.
      * @return The created User entity.
      */
-    public User register(UserRegisterRequest dto) {
+    public User register(UserRegisterMessage dto) {
 
-
+        // 1. 构建并保存用户
         User user = User.builder()
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
-                .email(dto.getEmail())
                 .isActive(false)
                 .role(Role.UNVERIFIED)
                 .build();
@@ -64,7 +77,39 @@ public class UserService {
                 .build();
 
         user.setProfile(profile);
-        return userRepository.save(user);
+
+        User saved = userRepository.save(user); // 保存后得到 UUID
+
+        // 2. 构建 Kafka dto（不含 password）
+        UserRegisterRequest message = UserRegisterRequest.builder()
+                .userId(saved.getId())
+                .email(saved.getUsername())  // username 即 email
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .imgUrl(dto.getImgUrl())
+                .build();
+
+        streamBridge.send(userRegisterBinding, message);
+        log.info("The registration info has been sent to EmailService via Kafka: {}", message);
+        return saved;
+    }
+
+    @Value("${bfs-forum.kafka.token-verify-binding-name}")
+    private String tokenVerifyBinding;
+
+    public EmailVerificationReply verifyToken(String token) {
+        String correlationId = UUID.randomUUID().toString();
+
+        CompletableFuture<EmailVerificationReply> future = requestReplyManager.createAndStoreFuture(correlationId);
+
+        Message<String> message = MessageBuilder.withPayload(token)
+                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
+                .build();
+
+        log.info("Send token verification request：correlationId={}, token={}", correlationId, token);
+        streamBridge.send(tokenVerifyBinding, message);
+
+        return requestReplyManager.awaitFuture(correlationId, future);
     }
 
     /**
@@ -151,4 +196,26 @@ public class UserService {
         userRepository.save(user);
     }
 
+    /**
+     * Activates a user after email verification.
+     * Sets the user as active and upgrades role to USER.
+     *
+     * @param userId the UUID of the user
+     * @param expiresAt the expiration time of the token
+     * @throws RuntimeException if token is expired or user not found
+     */
+    public void activateVerifiedUser(UUID userId, LocalDateTime expiresAt) {
+        if (expiresAt.isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token has expired");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User does not exist, ID: " + userId));
+
+        user.setActive(true);
+        user.setRole(Role.USER);
+
+        userRepository.save(user);
+        log.info("User successfully activated:: {}", userId);
+    }
 }
