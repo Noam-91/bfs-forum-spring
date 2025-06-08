@@ -41,3 +41,4 @@ build/
 
 ### Mac OS ###
 .DS_Storepost-service/src/test/java/com/bfsforum/postservice/MongoConnectionTest.java
+post-service/src/test/java/com/bfsforum/postservice/MongoConnectionTest.java
