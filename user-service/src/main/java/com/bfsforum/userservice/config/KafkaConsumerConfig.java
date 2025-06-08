@@ -26,7 +26,7 @@ public class KafkaConsumerConfig {
             String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
             EmailVerificationReply reply = message.getPayload();
 
-            log.info("✅ Received token verification reply for correlationId {}: {}", correlationId, reply);
+            log.info("Received token verification reply for correlationId {}: {}", correlationId, reply);
             requestReplyManager.completeFuture(correlationId, reply);
         };
     }
