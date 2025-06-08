@@ -1,6 +1,8 @@
 package com.bfsforum.postservice.dto.kafka;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,8 +15,10 @@ import java.util.UUID;
  */
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PostViewedEvent {
 	private UUID eventId;
 	private Long userId;

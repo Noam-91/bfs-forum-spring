@@ -42,6 +42,8 @@ public class KafkaConfig {
 		configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 		configProps.put(ProducerConfig.ACKS_CONFIG, "all");
 		configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
+		configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+		configProps.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 1);
 		
 		return new DefaultKafkaProducerFactory<>(configProps);
 	}
@@ -61,6 +63,7 @@ public class KafkaConfig {
 		configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 		configProps.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
 		configProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		configProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 		
 		return new DefaultKafkaConsumerFactory<>(configProps);
 	}
