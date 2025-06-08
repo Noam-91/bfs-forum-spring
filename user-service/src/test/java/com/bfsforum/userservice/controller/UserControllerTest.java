@@ -8,13 +8,11 @@ import com.bfsforum.userservice.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.*;
@@ -41,7 +39,7 @@ class UserControllerTest {
     @Test
     void register_success() throws Exception {
         UUID userId = UUID.randomUUID();
-        UserRegisterRequest req = new UserRegisterRequest("test", "test123", "test@example.com","John", "Doe", "img.png");
+        UserRegisterMessage req = new UserRegisterMessage("test", "test123","John", "Doe", "img.png");
 
         User user = User.builder().id(userId).username("test").build();
         when(userService.usernameExists("test")).thenReturn(false);
