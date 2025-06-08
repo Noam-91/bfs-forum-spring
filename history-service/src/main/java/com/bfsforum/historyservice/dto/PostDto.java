@@ -1,8 +1,6 @@
-package com.bfsforum.historyserivce.dto;
+package com.bfsforum.historyservice.dto;
 
 import lombok.*;
-
-import java.util.UUID;
 
 @Data
 @Setter
@@ -10,7 +8,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostDto {
-    private UUID postId;
+    private String postId;
     private String  title;
     private String  content;
     // to be discussed

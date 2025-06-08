@@ -1,16 +1,16 @@
-package com.bfsforum.historyserivce.dto;
+package com.bfsforum.historyservice.dto;
 
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+
 @Data
 @Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EnrichedHistoryDto {
-    private UUID postId;
+    private String postId;
     private LocalDateTime viewedAt;
     private PostDto    post;
 }

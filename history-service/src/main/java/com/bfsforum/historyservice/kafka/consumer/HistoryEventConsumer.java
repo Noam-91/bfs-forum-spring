@@ -1,11 +1,9 @@
-package com.bfsforum.historyserivce.kafka.consumer;
+package com.bfsforum.historyservice.kafka.consumer;
 
-import com.bfsforum.historyserivce.kafka.event.HistoryPostViewedEvent;
-import com.bfsforum.historyserivce.service.HistoryService;
+import com.bfsforum.historyservice.kafka.event.HistoryPostViewedEvent;
+import com.bfsforum.historyservice.service.HistoryService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-
-import java.time.ZoneId;
 
 @Component
 public class HistoryEventConsumer {
@@ -19,11 +17,9 @@ public class HistoryEventConsumer {
      * Listens for PostViewedEvent messages and upserts the history record.
      * whenever post-service make a http request to create or get a post.
      */
-    @KafkaListener(
-            topics = "post-viewed-topic",
-            containerFactory = "postViewedKafkaListenerContainerFactory"
-    )
+    @KafkaListener(topics = "post-viewed-topic")
     public void onPostViewed(HistoryPostViewedEvent event) {
+        System.out.println("Consumed PostViewedEvent: "+ event);
         historyService.recordView(
                 event.getUserId(),
                 event.getPostId(),

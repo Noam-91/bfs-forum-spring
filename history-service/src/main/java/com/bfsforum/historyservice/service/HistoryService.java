@@ -1,17 +1,21 @@
-package com.bfsforum.historyserivce.service;
+package com.bfsforum.historyservice.service;
 
-import com.bfsforum.historyserivce.domain.History;
-import com.bfsforum.historyserivce.dto.EnrichedHistoryDto;
-import com.bfsforum.historyserivce.dto.PostDto;
-import com.bfsforum.historyserivce.repository.HistoryRepo;
+import com.bfsforum.historyservice.domain.History;
+import com.bfsforum.historyservice.dto.EnrichedHistoryDto;
+import com.bfsforum.historyservice.dto.PostDto;
+import com.bfsforum.historyservice.repository.HistoryRepo;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.aop.framework.AopContext;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyFuture;
 import org.springframework.stereotype.Service;
-import com.bfsforum.historyserivce.kafka.event.*;
+import com.bfsforum.historyservice.kafka.event.*;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 
 import java.time.LocalDate;
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class HistoryService {
+
     private final HistoryRepo historyRepo;
     private final ReplyingKafkaTemplate<String, PostsEnrichmentRequest, PostsEnrichmentResponse> kafka;
 
@@ -32,7 +37,7 @@ public class HistoryService {
 
     /** A wrapper only for test purpose of jap findByUserIdAndPostId method
      */
-    public Optional<History> getByUserAndPost(UUID userId, UUID postId) {
+    public Optional<History> getByUserAndPost(String userId, String postId) {
         return historyRepo.findByUserIdAndPostId(userId, postId);
     }
 
@@ -41,14 +46,14 @@ public class HistoryService {
      */
     // evict the cache every time when new record is created
     @CacheEvict(cacheNames = "history", key = "#userId")
-    public History recordView(UUID userId, UUID postId, LocalDateTime viewedAt) {
+    public History recordView(String userId, String postId, LocalDateTime viewedAt) {
         return historyRepo.findByUserIdAndPostId(userId, postId)
                 .map(h -> {
                     h.setViewedAt(viewedAt);
                     return historyRepo.save(h);
                 })
                 .orElseGet(() -> {
-                    History h = new History(userId, postId, viewedAt);
+                    History h = History.builder().userId(userId).postId(postId).viewedAt(viewedAt).build();
                     return historyRepo.save(h);
                 });
     }
@@ -59,7 +64,7 @@ public class HistoryService {
      */
     // cache implemented to reuse the enriched history results for the next 2 filter functionalities
     @Cacheable(cacheNames = "history", key = "#userId")
-    public List<EnrichedHistoryDto> getEnrichedHistory(UUID userId) {
+    public List<EnrichedHistoryDto> loadFullEnrichedHistory(String userId) {
         // 1) raw history
         List<History> raw = historyRepo.findByUserIdOrderByViewedAtDesc(userId);
         if (raw.isEmpty()) {
@@ -67,11 +72,11 @@ public class HistoryService {
         }
 
         // 2) build & send enrichment request
-        List<UUID> postIds = raw.stream()
+        List<String> postIds = raw.stream()
                 .map(History::getPostId)
                 .collect(Collectors.toList());
         PostsEnrichmentRequest req =
-                new PostsEnrichmentRequest(UUID.randomUUID(), postIds);
+                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
         ProducerRecord<String, PostsEnrichmentRequest> record =
                 new ProducerRecord<>("posts-enrichment-request", req);
         PostsEnrichmentResponse resp;
@@ -88,11 +93,12 @@ public class HistoryService {
 
         // 3) merge into EnrichedHistoryDto
         // build lookup table for PostDto (key: postId, val: PostDto)
-        Map<UUID, PostDto> postsById = resp.getPosts()
+        Map<String, PostDto> postsById = resp.getPosts()
                 .stream()
                 .collect(Collectors.toMap(PostDto::getPostId, p -> p));
         // transform raw history to enriched Dtos
         return raw.stream()
+                .filter(h-> postsById.containsKey(h.getPostId()))
                 .map(h -> new EnrichedHistoryDto(
                         h.getPostId(),
                         h.getViewedAt(),
@@ -100,19 +106,39 @@ public class HistoryService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public static <T> Page<T> toPage(List<T> list, Pageable pageable) {
+        int total = list.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<T> slice = (start > end)
+                ? Collections.emptyList()
+                : list.subList(start, end);
+        return new PageImpl<>(slice, pageable, total);
+    }
+
+    public Page<EnrichedHistoryDto> getEnrichedHistory(
+            String userId, Pageable pageable) {
+        HistoryService proxy = (HistoryService) AopContext.currentProxy();
+        List<EnrichedHistoryDto> full = proxy.loadFullEnrichedHistory(userId);
+        return toPage(full, pageable);
+
+    }
     /**
      * Fetch full enriched history then filter by keyword (in title or content)
      */
-    public List<EnrichedHistoryDto> searchByKeyword(UUID userId, String keyword) {
+    public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
         try {
             String lower = keyword.toLowerCase();
-            return getEnrichedHistory(userId).stream()
+            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
                         PostDto p = dto.getPost();
                         return (p.getTitle()   != null && p.getTitle().toLowerCase().contains(lower))
                                 || (p.getContent() != null && p.getContent().toLowerCase().contains(lower));
                     })
                     .collect(Collectors.toList());
+            return toPage(filtered,pageable);
 
         } catch (Exception ex) {
             throw new RuntimeException("Failed for search by keyword: " + userId, ex);
@@ -122,12 +148,12 @@ public class HistoryService {
     /**
      * Filter cached enriched history by exact calendar date.
      */
-    public List<EnrichedHistoryDto> searchByDate(UUID userId, LocalDate date) {
+    public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate date, Pageable pageable) {
         try {
-            return getEnrichedHistory(userId).stream()
+            List<EnrichedHistoryDto> filtered = loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> dto.getViewedAt().toLocalDate().equals(date))
                     .collect(Collectors.toList());
-
+            return toPage(filtered,pageable);
         } catch (Exception ex) {
             throw new RuntimeException("Failed for search by date: " + userId, ex);
         }

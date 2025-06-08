@@ -1,12 +1,10 @@
-package com.bfsforum.historyserivce.domain;
+package com.bfsforum.historyservice.domain;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "history")
@@ -14,21 +12,24 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class History {
     @Id
-    @GeneratedValue
+    @UuidGenerator
     @Column(name = "id", columnDefinition = "BINARY(16)")
-    private UUID historyId;
+    private String historyId;
 
     @Column(name = "user_id", columnDefinition = "BINARY(16)")
-    private UUID userId;
+    private String userId;
 
     @Column(name = "post_id", columnDefinition = "BINARY(16)")
-    private UUID postId;
+    private String postId;
 
-    @Column(name="viewed_at")
+    @CreationTimestamp
+    @Column(name = "viewed_at", nullable = false, updatable = false)
     private LocalDateTime viewedAt;
-    public History(UUID userId, UUID postId, LocalDateTime viewedAt) {
+    public History(String userId, String postId, LocalDateTime viewedAt) {
+
         this.userId   = userId;
         this.postId   = postId;
         this.viewedAt = viewedAt;
