@@ -40,3 +40,8 @@ build/
 *.secret
 application-dev.yml
 application.yml
+
+# =======
+# remove MongoConnectionTest.java from being tracked
+# =======
+MongoConnectionTest.java
