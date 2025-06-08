@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Entity
 @AllArgsConstructor
@@ -19,8 +21,8 @@ import lombok.NoArgsConstructor;
 @Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
-  @Schema(type = "string", format = "uuid")
-  private String id;
+  @Schema(type = "UUID", format = "uuid")
+  private UUID id;
 
   @Schema(type = "string", description = "Email", example = "ny@bfs.com")
   private String username;

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.sql.Timestamp;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -20,8 +21,8 @@ import java.sql.Timestamp;
 public class Message {
   @Id
   @UuidGenerator
-  @Schema(type = "string", format = "uuid")
-  private String id;
+  @Schema(type = "UUID", format = "uuid")
+  private UUID id;
 
   @NotBlank
   @Schema(description = "User email", example = "ny@bfs.com")
