@@ -5,30 +5,23 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * @author luluxue
- * @date 2025-06-07
+ * @date 2025-06-08
  */
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReplyResponseDTO {
-	private String replyId;
-	private String postId;
+public class SubReplyResponseDTO {
+	private String subReplyId;
+	private String parentReplyId;
 	private Long userId;
 	private String comment;
 	private Boolean isActive;
 	private LocalDateTime dateCreated;
 	
-	// List of Subreply response
-	private List<SubReplyResponseDTO> subReplies;
-	
 	// user info
 	private UserInfoDTO userInfo;
-	
-	// counts of subreply
-	private Integer subReplyCount;
 }
