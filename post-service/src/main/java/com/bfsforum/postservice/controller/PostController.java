@@ -2,6 +2,7 @@ package com.bfsforum.postservice.controller;
 
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.PostStatus;
+import com.bfsforum.postservice.exception.PostNotFoundException;
 import com.bfsforum.postservice.service.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,14 +60,12 @@ public class PostController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Post> getPostById(@PathVariable String id) {
-		Optional<Post> post = postService.getPostById(id);
-		if (post.isPresent()) {
-			// increase view counts
-			postService.incrementViewCount(id);
-			return ResponseEntity.ok(post.get());
-		} else {
-			return ResponseEntity.notFound().build();
-		}
+		Post post = postService.getPostById(id)
+				.orElseThrow(() -> new PostNotFoundException(id));
+
+		// increase view counts
+		postService.incrementViewCount(id);
+		return ResponseEntity.ok(post);
 	}
 	
 	@PostMapping
@@ -77,22 +76,14 @@ public class PostController {
 	
 	@PutMapping("/{id}")
 	public ResponseEntity<Post> updatePost(@PathVariable String id, @Valid @RequestBody Post post) {
-		try {
 			Post updatedPost = postService.updatePost(id, post);
 			return ResponseEntity.ok(updatedPost);
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> deletePost(@PathVariable String id) {
-		try {
 			postService.deletePost(id);
 			return ResponseEntity.noContent().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
 	}
 	
 	@GetMapping("/search")
@@ -162,33 +153,21 @@ public class PostController {
 	// admin
 	@PutMapping("/{id}/ban")
 	public ResponseEntity<Post> banPost(@PathVariable String id) {
-		try {
-			Optional<Post> post = postService.getPostById(id);
-			if (post.isPresent()) {
-				Post existingPost = post.get();
-				existingPost.setStatus(PostStatus.BANNED);
-				Post updatedPost = postService.updatePost(id, existingPost);
-				return ResponseEntity.ok(updatedPost);
-			}
-			return ResponseEntity.notFound().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
+
+		Post post = postService.getPostById(id)
+				.orElseThrow(() -> new PostNotFoundException(id));
+		
+		post.setStatus(PostStatus.BANNED);
+		Post updatedPost = postService.updatePost(id, post);
+		return ResponseEntity.ok(updatedPost);
 	}
 	
 	@PutMapping("/{id}/unban")
 	public ResponseEntity<Post> unbanPost(@PathVariable String id) {
-		try {
-			Optional<Post> post = postService.getPostById(id);
-			if (post.isPresent()) {
-				Post existingPost = post.get();
-				existingPost.setStatus(PostStatus.PUBLISHED);
-				Post updatedPost = postService.updatePost(id, existingPost);
-				return ResponseEntity.ok(updatedPost);
-			}
-			return ResponseEntity.notFound().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
+		Post post = postService.getPostById(id)
+				.orElseThrow(() -> new PostNotFoundException(id));
+		post.setStatus(PostStatus.PUBLISHED);
+		Post updatedPost = postService.updatePost(id, post);
+		return ResponseEntity.ok(updatedPost);
 	}
 }

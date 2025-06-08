@@ -112,7 +112,7 @@ public class PostService {
 			post.setUpdatedAt(LocalDateTime.now());
 			return postRepository.save(post);
 		}
-		throw new RuntimeException("Post not found with ID: " + postId);
+		throw new PostNotFoundException(postId);
 	}
 	
 	// retrieve posts by postId
@@ -129,7 +129,7 @@ public class PostService {
 			existingPost.setUpdatedAt(LocalDateTime.now());
 			postRepository.save(existingPost);
 		} else {
-			throw new RuntimeException("Post not found with ID: " + postId);
+			throw new PostNotFoundException(postId);
 		}
 	}
 	
