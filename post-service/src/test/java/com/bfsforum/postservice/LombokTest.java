@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @date 2025-06-06
  */
 @SpringBootTest
-public class LomokTest {
+public class LombokTest {
 	
 	@Test
 	public void testLomokGettersSetters() {

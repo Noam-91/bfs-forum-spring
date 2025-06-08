@@ -40,4 +40,4 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Storepost-service/src/test/java/com/bfsforum/postservice/MongoConnectionTest.java
