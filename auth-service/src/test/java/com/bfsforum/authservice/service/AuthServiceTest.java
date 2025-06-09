@@ -37,7 +37,7 @@ class AuthServiceTest {
   private static final long TOKEN_EXPIRE = 36000L;        // 10 hours
 
   @Test
-  void loginAndIssueTokenWithNonExistingUsername() {
+  void loginAndIssueTokenWithNonExistingUsername_ShouldThrowInvalidCredentialsException() {
     LoginRequest loginRequest = new LoginRequest("nonExistingUser", "password");
 
     Mockito.when(authDao.findByUsername(loginRequest.getUsername())).thenReturn(Optional.empty());
@@ -47,7 +47,7 @@ class AuthServiceTest {
   }
 
   @Test
-  void loginAndIssueTokenWithWrongPassword() {
+  void loginAndIssueTokenWithWrongPassword_ShouldThrowInvalidCredentialsException() {
     LoginRequest loginRequest = new LoginRequest("existingUser", "password");
     User user = User.builder()
         .username("existingUser")
@@ -61,7 +61,7 @@ class AuthServiceTest {
   }
 
   @Test
-  void loginAndIssueTokenWithCorrectCredentials() {
+  void loginAndIssueTokenWithCorrectCredentials_ShouldReturnJWT() {
     LoginRequest loginRequest = new LoginRequest("existingUser", "password");
     User user = User.builder()
         .id("6a5ds1fg6a5s1")
@@ -81,9 +81,24 @@ class AuthServiceTest {
     String issuedToken = authServiceTest.loginAndIssueToken(loginRequest);
 
     assertEquals("MOCKED_JWT_TOKEN_VALUE", issuedToken, "The issued token should match the expected value.");
-    Mockito.verify(authDao).findByUsername(loginRequest.getUsername());
-    Mockito.verify(passwordEncoder).matches(loginRequest.getPassword(), user.getPassword());
-    Mockito.verify(jwtEncoder).encode(Mockito.any());
+    Mockito.verify(authDao, Mockito.times(1)).findByUsername(loginRequest.getUsername());
+    Mockito.verify(passwordEncoder, Mockito.times(1)).matches(loginRequest.getPassword(), user.getPassword());
+    Mockito.verify(jwtEncoder, Mockito.times(1)).encode(Mockito.any());
     Mockito.verifyNoMoreInteractions(authDao, passwordEncoder, jwtEncoder);
+  }
+
+  @Test
+  void findUserByIdWithCorrectID_ShouldReturnUser() {
+    User user = User.builder()
+        .id("6a5ds1fg6a5s1")
+        .username("existingUser")
+        .password("encodedPasswordFromDb")
+        .role(Role.USER.name())
+        .build();
+    Mockito.when(authDao.findById(user.getId())).thenReturn(Optional.of(user));
+    User foundUser = authServiceTest.findUserById(user.getId());
+    assertEquals(user.getId(), foundUser.getId());
+    Mockito.verify(authDao, Mockito.times(1)).findById(user.getId());
+    Mockito.verifyNoMoreInteractions(authDao);
   }
 }
