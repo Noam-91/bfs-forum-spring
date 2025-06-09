@@ -1,61 +1,92 @@
 package com.bfsforum.historyservice.service;
 
 import com.bfsforum.historyservice.domain.History;
+import com.bfsforum.historyservice.domain.HistoryTest;
+import com.bfsforum.historyservice.domain.Post;
 import com.bfsforum.historyservice.dto.EnrichedHistoryDto;
 import com.bfsforum.historyservice.dto.PostDto;
 import com.bfsforum.historyservice.repository.HistoryRepo;
+
+import com.bfsforum.historyservice.repository.HistoryTestRepo;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.Message;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
+import org.springframework.integration.support.MessageBuilder;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyFuture;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
-import com.bfsforum.historyservice.kafka.event.*;
+
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@Transactional
 public class HistoryService {
 
     private final HistoryRepo historyRepo;
-    private final ReplyingKafkaTemplate<String, PostsEnrichmentRequest, PostsEnrichmentResponse> kafka;
+    //for test
+    private final HistoryTestRepo historyTestRepo;
+    private final StreamBridge streamBridge;
+    private final RequestReplyManager<List<Post>> requestReplyManager;
 
-    public HistoryService(HistoryRepo historyRepo, ReplyingKafkaTemplate<String, PostsEnrichmentRequest, PostsEnrichmentResponse> kafka) {
+    public HistoryService(HistoryTestRepo historyTestRepo, HistoryRepo historyRepo, StreamBridge streamBridge, @Qualifier("postListManager") RequestReplyManager<List<Post>> requestReplyManager ) {
+        this.historyTestRepo = historyTestRepo;
         this.historyRepo = historyRepo;
-        this.kafka = kafka;
+        this.streamBridge = streamBridge;
+        this.requestReplyManager = requestReplyManager;
     }
 
+    @Value("${bfs-forum.kafka.request-binding-name}") //Custom value
+    private String requestBindingName;
     /** A wrapper only for test purpose of jap findByUserIdAndPostId method
      */
-    public Optional<History> getByUserAndPost(String userId, String postId) {
+    public Optional<History> getByUserAndPost(UUID userId, UUID postId) {
         return historyRepo.findByUserIdAndPostId(userId, postId);
     }
+
+
 
     /**
      * Write a history record in DB every time consumes a PostViewedEvent
      */
     // evict the cache every time when new record is created
     @CacheEvict(cacheNames = "history", key = "#userId")
-    public History recordView(String userId, String postId, LocalDateTime viewedAt) {
+    public History recordView(UUID userId, UUID postId) {
+        LocalDateTime now = LocalDateTime.now();
         return historyRepo.findByUserIdAndPostId(userId, postId)
                 .map(h -> {
-                    h.setViewedAt(viewedAt);
+                    h.setViewedAt(now);
                     return historyRepo.save(h);
                 })
                 .orElseGet(() -> {
-                    History h = History.builder().userId(userId).postId(postId).viewedAt(viewedAt).build();
+                    History h = History.builder().userId(userId).postId(postId).viewedAt(now).build();
                     return historyRepo.save(h);
                 });
+    }
+
+    public HistoryTest recordViewInString(String userId, String postId) {
+        LocalDateTime now = LocalDateTime.now();
+        HistoryTest h = HistoryTest.builder().userId(userId).postId(postId).viewedAt(now).build();
+        return historyTestRepo.save(h);
     }
 
     /**
@@ -64,46 +95,56 @@ public class HistoryService {
      */
     // cache implemented to reuse the enriched history results for the next 2 filter functionalities
     @Cacheable(cacheNames = "history", key = "#userId")
-    public List<EnrichedHistoryDto> loadFullEnrichedHistory(String userId) {
-        // 1) raw history
+    public List<EnrichedHistoryDto> loadFullEnrichedHistory(UUID userId) {
+        // 1) raw history list to postId list
         List<History> raw = historyRepo.findByUserIdOrderByViewedAtDesc(userId);
         if (raw.isEmpty()) {
             return Collections.emptyList();
         }
+        List<UUID> postIds = raw.stream().map(History::getPostId).collect(Collectors.toList());
 
         // 2) build & send enrichment request
-        List<String> postIds = raw.stream()
-                .map(History::getPostId)
-                .collect(Collectors.toList());
-        PostsEnrichmentRequest req =
-                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
-        ProducerRecord<String, PostsEnrichmentRequest> record =
-                new ProducerRecord<>("posts-enrichment-request", req);
-        PostsEnrichmentResponse resp;
-        try {
-            // send req and register for a reply
-            RequestReplyFuture<String, PostsEnrichmentRequest, PostsEnrichmentResponse> future = kafka.sendAndReceive(record);
-            // block up to 5s until reply arrives
-            ConsumerRecord<String, PostsEnrichmentResponse> cr = future.get(5, TimeUnit.SECONDS);
-            // extract the DTO from record
-            resp = cr.value();
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed for getting response from post-service: " + userId, ex);
-        }
+        String correlationId = UUID.randomUUID().toString();
+            // a. create a CompletableFuture and store it
+        CompletableFuture<List<Post>> future = requestReplyManager.createAndStoreFuture(correlationId);
+            // b. prepare and send the Kafka request message with correlationId in header
+        Message<List<UUID>> message = MessageBuilder.withPayload(postIds)
+                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
+                .build();
+        streamBridge.send(requestBindingName, message);
+            // c. wait for the future to complete with a timeout
+        List<Post> repliedPosts = requestReplyManager.awaitFuture(correlationId, future);
+//        PostsEnrichmentRequest req =
+//                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
+//        ProducerRecord<String, PostsEnrichmentRequest> record =
+//                new ProducerRecord<>("posts-enrichment-request", req);
+//        PostsEnrichmentResponse resp;
+//        try {
+//            // send req and register for a reply
+//            RequestReplyFuture<String, PostsEnrichmentRequest, PostsEnrichmentResponse> future = kafka.sendAndReceive(record);
+//            // block up to 5s until reply arrives
+//            ConsumerRecord<String, PostsEnrichmentResponse> cr = future.get(5, TimeUnit.SECONDS);
+//            // extract the DTO from record
+//            resp = cr.value();
+//        } catch (Exception ex) {
+//            throw new RuntimeException("Failed for getting response from post-service: " + userId, ex);
+//        }
 
         // 3) merge into EnrichedHistoryDto
         // build lookup table for PostDto (key: postId, val: PostDto)
-        Map<String, PostDto> postsById = resp.getPosts()
+        Map<UUID, PostDto> postsById = repliedPosts
                 .stream()
-                .collect(Collectors.toMap(PostDto::getPostId, p -> p));
+                .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().postId(p.getId()).title(p.getTitle()).content(p.getContent()).build()));
         // transform raw history to enriched Dtos
         return raw.stream()
                 .filter(h-> postsById.containsKey(h.getPostId()))
-                .map(h -> new EnrichedHistoryDto(
-                        h.getPostId(),
-                        h.getViewedAt(),
-                        postsById.get(h.getPostId())
-                ))
+                .map(h -> EnrichedHistoryDto.
+                        builder().
+                        postId(h.getPostId()).
+                        viewedAt(h.getViewedAt()).
+                        post(postsById.get(h.getPostId()))
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 
@@ -118,7 +159,7 @@ public class HistoryService {
     }
 
     public Page<EnrichedHistoryDto> getEnrichedHistory(
-            String userId, Pageable pageable) {
+            UUID userId, Pageable pageable) {
         HistoryService proxy = (HistoryService) AopContext.currentProxy();
         List<EnrichedHistoryDto> full = proxy.loadFullEnrichedHistory(userId);
         return toPage(full, pageable);
@@ -127,7 +168,7 @@ public class HistoryService {
     /**
      * Fetch full enriched history then filter by keyword (in title or content)
      */
-    public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
+    public Page<EnrichedHistoryDto> searchByKeyword(UUID userId, String keyword, Pageable pageable) {
         try {
             String lower = keyword.toLowerCase();
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
@@ -148,9 +189,10 @@ public class HistoryService {
     /**
      * Filter cached enriched history by exact calendar date.
      */
-    public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate date, Pageable pageable) {
+    public Page<EnrichedHistoryDto> searchByDate(UUID userId, LocalDate date, Pageable pageable) {
         try {
-            List<EnrichedHistoryDto> filtered = loadFullEnrichedHistory(userId).stream()
+            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> dto.getViewedAt().toLocalDate().equals(date))
                     .collect(Collectors.toList());
             return toPage(filtered,pageable);

@@ -7,6 +7,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostsEnrichmentResponse {
-    private String requestId;
+//    private String requestId;
     private List<PostDto> posts;
 }

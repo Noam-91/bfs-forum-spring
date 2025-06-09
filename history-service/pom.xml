@@ -81,7 +81,17 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
-        <!-- Spring for Apache Kafka -->
+        <!--stream-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+        </dependency>
+
+        <!--kafka-->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
@@ -157,6 +167,10 @@
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
+                    <excludes>
+                        <!-- exclude any files in com/bfsforum/…/ignoredfolder/ -->
+                        <exclude>**/com/bfsforum/**/ignoredfolder/**/*.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>

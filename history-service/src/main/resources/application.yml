@@ -1,37 +1,96 @@
-#eureka:
-#  client:
-#    enabled: false
-
-
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry:     false
 spring:
-#  cloud:
-#    discovery:
-#      enabled: false
   datasource:
-    url: "jdbc:mysql://localhost:3306/bfsforum"
+    url: jdbc:mysql://localhost:3306/bfsforum
     driver: com.mysql.cj.jdbc.Driver
     username: root
     password: 88Yj10hy0326*
+
+  application:
+    name: history-service
   kafka:
-    consumer:
-      group-id: history-service-group
-      auto-offset-reset: earliest
+    bootstrap-servers: localhost:9092
+  cloud:
+    function:
+      definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
 
-      # wrap both in the ErrorHandlingDeserializer
-      key-deserializer:   org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#      bindings:
+#        # ← FUNCTION bindings, not stream.bindings!
+#        postNotificationEventConsumer-in-0:
+#          consumer:
+#            content-type: application/json
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+          configuration:
+            # allow Jackson to deserialize your Post/HistoryEvent types
+            spring.json.trusted.packages: "com.bfsforum.historyservice.domain"
+      bindings:
 
-      properties:
-        # delegate the real work
-        spring.deserializer.key.delegate.class:   org.apache.kafka.common.serialization.StringDeserializer
-        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        # 1) Handles the list-of-posts enrichment replies
+        postEnrichRequestEventConsumer-in-0:
+          destination: posts-enrichment-response
+#          contentType: application/json
 
-        # tell JSON deserializer what type to bind when no headers are present
-        spring.json.value.default.type: com.bfsforum.historyservice.kafka.event.HistoryPostViewedEvent
-        spring.json.trusted.packages: "*" # Or simply "" for all
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+#          group: history-service   # ← add this
+
+        # 2) Listens for single-post notifications
+        postNotificationEventConsumer-in-0:
+          destination: post-view-notification
+#          contentType: application/json
+
+
+#          group: history-service   # ← and this
+
+        # 3) Outbound for your StreamBridge
+        historyEventSender-out-0:
+          destination: posts-enrichment-request
+
+
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 6000
+
+
+bfs-forum:
+  kafka:
+    request-binding-name: historyEventSender-out-0
+
+#     <----v2---->
+#  kafka:
+#    consumer:
+#      group-id: history-service-group
+#      auto-offset-reset: earliest
+#
+#      # wrap both in the ErrorHandlingDeserializer
+#      key-deserializer:   org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#
+#      properties:
+#        # delegate the real work
+#        spring.deserializer.key.delegate.class:   org.apache.kafka.common.serialization.StringDeserializer
+#        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+#
+#        # tell JSON deserializer what type to bind when no headers are present
+#        spring.json.value.default.type: com.bfsforum.historyservice.kafka.event.HistoryPostViewedEvent
+#        spring.json.trusted.packages: "*" # Or simply "" for all
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      #<---v1--->
 #    consumer:
 #      group-id: order-group
 #      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

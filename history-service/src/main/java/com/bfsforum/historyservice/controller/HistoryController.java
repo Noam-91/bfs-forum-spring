@@ -1,5 +1,8 @@
 package com.bfsforum.historyservice.controller;
 
+
+import com.bfsforum.historyservice.domain.History;
+import com.bfsforum.historyservice.domain.HistoryTest;
 import com.bfsforum.historyservice.dto.EnrichedHistoryDto;
 import com.bfsforum.historyservice.service.HistoryService;
 import org.springframework.data.domain.Page;
@@ -7,12 +10,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/history")
@@ -25,7 +30,7 @@ public class HistoryController {
 
     @GetMapping
     public ResponseEntity<Page<EnrichedHistoryDto>> getHistory(
-            @RequestHeader(name = "X-User-Id") String userId,
+            @RequestHeader(name = "X-User-Id") UUID userId,
             @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
@@ -34,10 +39,20 @@ public class HistoryController {
         return ResponseEntity.ok(data);
 
     }
+    // test controller for saving a String in db
+    @PutMapping("/save")
+    public ResponseEntity<?> saveHistory(
+            @RequestParam("userId") String userId,
+            @RequestParam("postId") String postId
+    ){
+        System.out.println("History save test start:");
+        HistoryTest h = historyService.recordViewInString(userId, postId);
+        return ResponseEntity.ok(h);
+    }
 
     @GetMapping("/search")
     public ResponseEntity<?> search(
-            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-User-Id") UUID userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(name = "date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -45,10 +60,10 @@ public class HistoryController {
             Pageable pageable
     ) {
         if (keyword != null && date != null) {
-                return ResponseEntity
-                        .badRequest()
-                        .body(Map.of("error",
-                                "Please supply either keyword or date, not both."));
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Please supply either keyword or date, not both."
+            );
             }
             Page<EnrichedHistoryDto> page;
             if (keyword != null) {

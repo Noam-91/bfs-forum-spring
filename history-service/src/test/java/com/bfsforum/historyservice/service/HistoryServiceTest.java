@@ -45,8 +45,8 @@ class HistoryServiceTest {
     @InjectMocks
     private HistoryService service;
 
-    private String userId;
-    private String postId;
+    private UUID userId;
+    private UUID postId;
     private History example;
     private LocalDateTime now;
 
