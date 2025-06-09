@@ -1,25 +1,19 @@
 package com.bfsforum.historyservice.service;
 
 import com.bfsforum.historyservice.domain.History;
-import com.bfsforum.historyservice.domain.HistoryTest;
 import com.bfsforum.historyservice.domain.Post;
 import com.bfsforum.historyservice.dto.EnrichedHistoryDto;
 import com.bfsforum.historyservice.dto.PostDto;
 import com.bfsforum.historyservice.repository.HistoryRepo;
 
-import com.bfsforum.historyservice.repository.HistoryTestRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
 import org.springframework.integration.support.MessageBuilder;
-import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
-import org.springframework.kafka.requestreply.RequestReplyFuture;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +28,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,13 +36,10 @@ import java.util.stream.Collectors;
 public class HistoryService {
 
     private final HistoryRepo historyRepo;
-    //for test
-    private final HistoryTestRepo historyTestRepo;
     private final StreamBridge streamBridge;
     private final RequestReplyManager<List<Post>> requestReplyManager;
 
-    public HistoryService(HistoryTestRepo historyTestRepo, HistoryRepo historyRepo, StreamBridge streamBridge, @Qualifier("postListManager") RequestReplyManager<List<Post>> requestReplyManager ) {
-        this.historyTestRepo = historyTestRepo;
+    public HistoryService(HistoryRepo historyRepo, StreamBridge streamBridge, @Qualifier("postListManager") RequestReplyManager<List<Post>> requestReplyManager ) {
         this.historyRepo = historyRepo;
         this.streamBridge = streamBridge;
         this.requestReplyManager = requestReplyManager;
@@ -83,11 +73,6 @@ public class HistoryService {
                 });
     }
 
-    public HistoryTest recordViewInString(String userId, String postId) {
-        LocalDateTime now = LocalDateTime.now();
-        HistoryTest h = HistoryTest.builder().userId(userId).postId(postId).viewedAt(now).build();
-        return historyTestRepo.save(h);
-    }
 
     /**
      * Fetches raw history from the DB, asks the post-service for full PostDto details via Kafka,
@@ -187,17 +172,23 @@ public class HistoryService {
     }
 
     /**
-     * Filter cached enriched history by exact calendar date.
+     * Filter cached enriched history by bonded startDate and endDate.
      */
-    public Page<EnrichedHistoryDto> searchByDate(UUID userId, LocalDate date, Pageable pageable) {
+    public Page<EnrichedHistoryDto> searchByDate(UUID userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         try {
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
-                    .filter(dto -> dto.getViewedAt().toLocalDate().equals(date))
+                    .filter(dto -> {
+                        LocalDate viewed = dto.getViewedAt().toLocalDate();
+                        return (!viewed.isBefore(startDate))
+                                && (!viewed.isAfter(endDate));
+                    })
                     .collect(Collectors.toList());
-            return toPage(filtered,pageable);
+            return toPage(filtered, pageable);
         } catch (Exception ex) {
-            throw new RuntimeException("Failed for search by date: " + userId, ex);
+            throw new RuntimeException(
+                    String.format("Failed for date range search [%s – %s] for user %s",
+                            startDate, endDate, userId), ex);
         }
     }
 }

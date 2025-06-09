@@ -81,6 +81,11 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
+        <!--actuator-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!--stream-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

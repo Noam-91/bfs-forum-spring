@@ -2,13 +2,8 @@ eureka:
   client:
     register-with-eureka: false
     fetch-registry:     false
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/bfsforum
-    driver: com.mysql.cj.jdbc.Driver
-    username: root
-    password: 88Yj10hy0326*
 
+spring:
   application:
     name: history-service
   kafka:
@@ -16,42 +11,36 @@ spring:
   cloud:
     function:
       definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
-
-#      bindings:
-#        # ← FUNCTION bindings, not stream.bindings!
-#        postNotificationEventConsumer-in-0:
-#          consumer:
-#            content-type: application/json
-    stream:
-      kafka:
-        binder:
-          brokers: localhost:9092
-          configuration:
-            # allow Jackson to deserialize your Post/HistoryEvent types
-            spring.json.trusted.packages: "com.bfsforum.historyservice.domain"
       bindings:
+        postEnrichRequestEventConsumer-in-0:
+          content-type: application/json
+        postNotificationEventConsumer-in-0:
+          content-type: application/json
 
+    stream:
+      bindings:
         # 1) Handles the list-of-posts enrichment replies
         postEnrichRequestEventConsumer-in-0:
           destination: posts-enrichment-response
-#          contentType: application/json
+          content-type: application/json
 
-
-#          group: history-service   # ← add this
 
         # 2) Listens for single-post notifications
         postNotificationEventConsumer-in-0:
           destination: post-view-notification
-#          contentType: application/json
+          content-type: application/json
 
-
-#          group: history-service   # ← and this
 
         # 3) Outbound for your StreamBridge
         historyEventSender-out-0:
           destination: posts-enrichment-request
+          content-type: application/json
 
-
+  datasource:
+    url: jdbc:mysql://localhost:3306/bfsforum
+    driver: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 88Yj10hy0326*
 
   jpa:
     hibernate:
