@@ -22,7 +22,7 @@ public class Message {
   @Id
   @UuidGenerator
   @Schema(type = "UUID", format = "uuid")
-  private UUID id;
+  private String id;
 
   @NotBlank
   @Schema(description = "User email", example = "ny@bfs.com")
