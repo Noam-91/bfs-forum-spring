@@ -15,5 +15,4 @@ public class PostServiceApplication {
         System.setProperty("MONGODB_URI", dotenv.get("MONGODB_URI"));
         SpringApplication.run(PostServiceApplication.class, args);
     }
-
 }
