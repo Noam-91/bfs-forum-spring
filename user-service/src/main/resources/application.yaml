@@ -45,6 +45,7 @@ bfs-forum:
   kafka:
     user-register-binding-name: userRegister-out-0
     token-verify-binding-name: tokenVerify-out-0
+    user-info-reply-binding-name: userInfoReply-out-0
 
 eureka:
   client:
