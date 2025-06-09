@@ -6,13 +6,16 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * @author luluxue
  * @date 2025-06-06
  */
-// 嵌套在Post中的reply
+
+// replies nested in posts
 @Document(collation = "replies")
 @Data
 @NoArgsConstructor
@@ -24,4 +27,6 @@ public class Reply {
 	private String comment;
 	private Boolean isActive = true;  // isActive (false -> deleted)
 	private LocalDateTime createdAt = LocalDateTime.now();
+	
+	private List<SubReply> subReplies = new ArrayList<>();
 }

@@ -3,6 +3,8 @@ package com.bfsforum.postservice.service;
 import com.bfsforum.postservice.dao.ReplyRepository;
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.Reply;
+import com.bfsforum.postservice.domain.SubReply;
+import com.bfsforum.postservice.dto.SubReplyDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
@@ -47,5 +49,20 @@ public class ReplyService {
 			post.setReplyCount((int) replyCount);
 			postService.updatePost(postId, post);
 		}
+	}
+	
+	// add subReplies
+	public void addSubReply(String replyId, SubReplyDTO dto){
+		Reply reply = replyRepository.findById(replyId)
+				.orElseThrow(() -> new RuntimeException("Reply not found"));
+		
+		SubReply subReply = new SubReply();
+		subReply.setUserId(dto.getUserId());
+		subReply.setComment(dto.getComment());
+		subReply.setIsActive(true);
+		subReply.setCreatedAt(LocalDateTime.now());
+		
+		reply.getSubReplies().add(subReply);
+		replyRepository.save(reply);
 	}
 }
