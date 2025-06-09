@@ -163,4 +163,5 @@ class UserServiceTest {
         assertFalse(user.isActive());
         verify(userRepository).save(user);
     }
+
 }

@@ -14,7 +14,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.function.Consumer;
 
 
@@ -25,10 +25,7 @@ public class KafkaConsumerConfig {
     private final RequestReplyManager<EmailVerificationReply> requestReplyManager;
     private final UserRepository userRepository;
     private final StreamBridge streamBridge;
-    @Bean
-    public RequestReplyManager<EmailVerificationReply> emailVerificationReplyRequestReplyManager() {
-        return new RequestReplyManager<>();
-    }
+
     public KafkaConsumerConfig(RequestReplyManager<EmailVerificationReply> requestReplyManager,
                                UserRepository userRepository,
                                StreamBridge streamBridge) {
@@ -44,7 +41,7 @@ public class KafkaConsumerConfig {
             EmailVerificationReply reply = message.getPayload();
 
             log.info("Received token verification reply for correlationId {}: {}", correlationId, reply);
-            if (reply == null || reply.getExpiresAt() == null || reply.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (reply == null || reply.getExpiresAt() == null || reply.getExpiresAt().isBefore(Instant.now())) {
                 log.warn("Invalid or expired token received for correlationId {}. reply={}", correlationId, reply.getExpiresAt());
 
                 requestReplyManager.completeFutureExceptionally(

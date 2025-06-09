@@ -54,7 +54,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User registered successfully"))
-                .andExpect(jsonPath("$.userId").value(userId)); // ✅ 现在 userId 是 String，不需要 toString()
+                .andExpect(jsonPath("$.userId").value(userId));
     }
 
     @Test

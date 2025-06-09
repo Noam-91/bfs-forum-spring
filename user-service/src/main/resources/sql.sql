@@ -23,29 +23,29 @@ CREATE TABLE user_profile (
 
 DROP TABLE IF EXISTS message;
 CREATE TABLE message (
-                         id BINARY(16) PRIMARY KEY,
+                         id VARCHAR(36) PRIMARY KEY,
                          email VARCHAR(255) NOT NULL,
                          subject VARCHAR(255) NOT NULL,
                          content TEXT NOT NULL,
                          status ENUM('SOLVED', 'UNSOLVED') NOT NULL DEFAULT 'UNSOLVED',
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          updated_at TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
-                         updated_by BINARY(16)
+                         updated_by VARCHAR(36)
 );
 
 DROP TABLE IF EXISTS history;
 CREATE TABLE history (
-                         id BINARY(16) PRIMARY KEY,
-                         user_id BINARY(16) NOT NULL,
-                         post_id BINARY(16) NOT NULL,
+                         id VARCHAR(36) PRIMARY KEY,
+                         user_id VARCHAR(36) NOT NULL,
+                         post_id VARCHAR(36) NOT NULL,
                          viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          CONSTRAINT unique_user_post UNIQUE (user_id, post_id)
 );
 
 DROP TABLE IF EXISTS verification;
 CREATE TABLE verification (
-                              token VARCHAR(32) PRIMARY KEY,
-                              user_id BINARY(16) NOT NULL,
+                              token VARCHAR(36) PRIMARY KEY,
+                              user_id VARCHAR(36) NOT NULL,
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               expired_at TIMESTAMP
 );
@@ -62,8 +62,3 @@ END;
 //
 DELIMITER ;
 
-
-# ---------Init--------------
-
-insert into user (id, username, password, is_active, role)
-VALUES (UNHEX(REPLACE(UUID(), '-', '')), 'test', '$2a$11$ifPUemlX2TYtI9NVn9tnr.sZ2DyyMQaJW3DqnRVszm0oKyg.Q.FbG', TRUE, 'SUPER_ADMIN');

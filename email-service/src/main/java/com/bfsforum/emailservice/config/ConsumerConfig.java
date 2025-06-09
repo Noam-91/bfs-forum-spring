@@ -36,14 +36,18 @@ public class ConsumerConfig {
   @Bean
   public Consumer<Message<UserRegisterRequest>> registerNotificationConsumer() {
     return message -> {
-      UserRegisterRequest user = message.getPayload();
-      String email = user.getEmail();
-      String userId = user.getUserId();
       try {
+        log.info("测试测试：收到注册消息 Header: {}", message.getHeaders());
+        UserRegisterRequest user = message.getPayload();
+        log.info("📨 收到注册消息 Payload: {}", user);
+        String email = user.getEmail();
+        String userId = user.getUserId();
+
+
         emailService.sendActivationEmail(email, userId);
         log.info("Activation email sent to {}", email);
       } catch (EmailProcessingException e) {
-        log.error("Failed to send activation email to {}: {}", email, e.getMessage());
+        log.error("Failed to send activation email to {}", e.getMessage());
       }
     };
   }
@@ -63,7 +67,7 @@ public class ConsumerConfig {
           .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
           .build();
 
-      streamBridge.send(verificationResponseBinding, replyMessage);
+      streamBridge.send("verificationResponseSupplier-out-0", replyMessage);
     };
   }
 }
