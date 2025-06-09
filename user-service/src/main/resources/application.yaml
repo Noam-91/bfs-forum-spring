@@ -19,21 +19,34 @@ spring:
   cloud:
     stream:
       function:
-        definition: emailVerificationReplyConsumer
+        definition: emailVerificationReplyConsumer, userInfoReplyConsumer
       bindings:
+        userRegister-out-0:
+          # register-notification: sent after user registration
+          destination: register-notification
         tokenVerify-out-0:
-          destination: token-verify-request
+          # verification-request: token verification request
+          destination: verification-request
         emailVerificationReplyConsumer-in-0:
-          destination: token-verify-reply
+          # verification-response: reply from email service after token validation
+          destination: verification-response
 
+        userInfoRequest-in-0:
+          # user-info-request: other service asks for username by userId
+          destination: user-info-request
+
+        userInfoReplyConsumer-out-0:
+          # user-info-response: userService replies with username
+          destination: user-info-response
   kafka:
     bootstrap-servers: localhost:9092
+
+bfs-forum:
+  kafka:
+    user-register-binding-name: userRegister-out-0
+    token-verify-binding-name: tokenVerify-out-0
 
 eureka:
   client:
     enabled: false
 
-bfs-forum:
-  kafka:
-    user-register-binding-name: tokenVerify-out-0
-    token-verify-binding-name: tokenVerify-out-0

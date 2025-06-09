@@ -9,7 +9,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserRegisterRequest {
-    private UUID userId;
+    private String userId;
     private String email;
     private String firstName;
     private String lastName;

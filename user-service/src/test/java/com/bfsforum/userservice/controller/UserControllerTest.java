@@ -42,7 +42,7 @@ class UserControllerTest {
 
     @Test
     void register_success() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString(); //  To String
         UserRegisterMessage req = new UserRegisterMessage("test", "test123","John", "Doe", "img.png");
 
         User user = User.builder().id(userId).username("test").build();
@@ -54,15 +54,27 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User registered successfully"))
-                .andExpect(jsonPath("$.userId").value(userId.toString()));
+                .andExpect(jsonPath("$.userId").value(userId)); // ✅ 现在 userId 是 String，不需要 toString()
     }
 
     @Test
     void getProfile_success() throws Exception {
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString(); // 改为 String 类型
+
         UserProfile profile = UserProfile.builder()
-                .firstName("John").lastName("Doe").imgUrl("img.png").isActive(true).build();
-        User user = User.builder().id(id).username("test").role(Role.USER).isActive(true).profile(profile).build();
+                .firstName("John")
+                .lastName("Doe")
+                .imgUrl("img.png")
+                .isActive(true)
+                .build();
+
+        User user = User.builder()
+                .id(id)
+                .username("test")
+                .role(Role.USER)
+                .isActive(true)
+                .profile(profile)
+                .build();
 
         when(userService.findById(id)).thenReturn(Optional.of(user));
 
@@ -87,7 +99,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Admin toggles activation - isActive true")
     void testToggleUserActivation_activate() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
 
         String body = "{ \"isActive\": true }";
 
@@ -103,7 +115,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Admin toggles activation - isActive false")
     void testToggleUserActivation_deactivate() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
 
         String body = "{ \"isActive\": false }";
 
@@ -119,7 +131,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Email service activates user")
     void testActivateFromEmail() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
 
         mockMvc.perform(put("/users/" + userId + "/activate"))
                 .andExpect(status().isOk())
@@ -139,7 +151,11 @@ class UserControllerTest {
 
     @Test
     void getAllUsers_success() throws Exception {
-        User u = User.builder().id(UUID.randomUUID()).username("user1").build();
+        User u = User.builder()
+                .id(UUID.randomUUID().toString())  // UUID to String
+                .username("user1")
+                .build();
+
         Page<User> mockPage = new PageImpl<>(List.of(u), PageRequest.of(0, 10), 1);
         when(userService.getAllUsers(0, 10)).thenReturn(mockPage);
 
@@ -150,11 +166,13 @@ class UserControllerTest {
 
     @Test
     void getProfile_notFound() throws Exception {
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
+
         when(userService.findById(id)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/users/{id}/profile", id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
+
 }

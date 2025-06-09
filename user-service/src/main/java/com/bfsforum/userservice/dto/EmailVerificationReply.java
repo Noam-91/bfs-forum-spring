@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class EmailVerificationReply {
     private String token;
-    private UUID userId;
+    private String userId;
+//    private LocalDateTime createAt;
     private LocalDateTime expiresAt;
 }
