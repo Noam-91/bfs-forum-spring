@@ -1,5 +1,6 @@
 package com.bfsforum.messageservice.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -17,21 +18,39 @@ public class GlobalExceptionHandler {
     private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Internal Server Error";
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Object> handleNotFoundException(NotFoundException ex) {
+    public ResponseEntity<Object> handleNotFoundException(NotFoundException ex,
+                                                          HttpServletRequest request) {
         log.error("NotFoundException: {}", ex.getMessage());
-        return new ResponseEntity<>(Map.of("error",ex.getMessage()), HttpStatus.NOT_FOUND);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .path(request.getRequestURI())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(NotAuthorizedException.class)
-    public ResponseEntity<Object> handleNotAuthorizedException(NotAuthorizedException ex) {
+    public ResponseEntity<Object> handleNotAuthorizedException(NotAuthorizedException ex,
+                                                               HttpServletRequest request) {
         log.error("NotAuthorizedException: {}", ex.getMessage());
-        return new ResponseEntity<>(Map.of("error",ex.getMessage()), HttpStatus.FORBIDDEN);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .path(request.getRequestURI())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<Object> handleBadRequestException(BadRequestException ex) {
+    public ResponseEntity<Object> handleBadRequestException(BadRequestException ex,
+                                                            HttpServletRequest request) {
         log.error("BadRequestException: {}", ex.getMessage());
-        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.BAD_REQUEST);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .path(request.getRequestURI())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /** Exception in JDBC **/
