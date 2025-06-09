@@ -41,8 +41,8 @@ public class KafkaConsumerConfig {
             EmailVerificationReply reply = message.getPayload();
 
             log.info("Received token verification reply for correlationId {}: {}", correlationId, reply);
-            if (reply == null || reply.getExpiresAt() == null || reply.getExpiresAt().isBefore(Instant.now())) {
-                log.warn("Invalid or expired token received for correlationId {}. reply={}", correlationId, reply.getExpiresAt());
+            if (reply == null || reply.getExpiredAt() == null || reply.getExpiredAt().isBefore(Instant.now())) {
+                log.warn("Invalid or expired token received for correlationId {}. reply={}", correlationId, reply.getExpiredAt());
 
                 requestReplyManager.completeFutureExceptionally(
                         correlationId, new RuntimeException("Token is invalid or expired"));
