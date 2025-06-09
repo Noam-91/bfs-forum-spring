@@ -3,10 +3,9 @@ package com.bfsforum.emailservice.service;
 import com.bfsforum.emailservice.dao.VerificationTokenRepository;
 import com.bfsforum.emailservice.domain.VerificationToken;
 import com.bfsforum.emailservice.dto.UserRegisterRequest;
+import com.bfsforum.emailservice.exception.EmailProcessingException;
 import jakarta.mail.internet.MimeMessage;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -23,15 +22,20 @@ class EmailServiceTest {
     @Mock
     private VerificationTokenRepository vtRepository;
 
-    private MockedStatic<EmailUtil> mockedEmailUtil;
 
     @InjectMocks
     private EmailService emailService;
 
-    private String activationBaseUrl;
-    private long expirationMinutes;
-    private String testFromEmail = "test-from@test.com";
 
+    @Value("${app.activation.base-url}")
+    private String activationBaseUrl;
+
+    @Value("${token.expiration.minutes}")
+    private long expirationMinutes;
+
+    @Value("${app.email.from}")
+    private String testFromEmail;
+    private MockedStatic<EmailUtil> mockedEmailUtil;
 
     private UserRegisterRequest userRegisterRequest;
     private VerificationToken vt;
@@ -43,57 +47,110 @@ class EmailServiceTest {
         MockitoAnnotations.openMocks(this);
         mockedEmailUtil = mockStatic(EmailUtil.class);
 
-        activationBaseUrl = "localhost:8080";
-        expirationMinutes = 10;
-        testFromEmail = "test-from@test.com";
+//        activationBaseUrl = "localhost:8080";
+//        expirationMinutes = 10;
+//        testFromEmail = "test-from@test.com";
 
         String userId = UUID.randomUUID().toString();
         userRegisterRequest = UserRegisterRequest.builder()
-            .email("test@example.com")
-            .userId(userId)
-            .build();
+                .email("test@example.com")
+                .userId(userId)
+                .build();
         vt = VerificationToken.builder()
-            .token(UUID.randomUUID().toString())
-            .userId(userId)
-            .build();
+                .token(UUID.randomUUID().toString())
+                .userId(userId)
+                .build();
 
         // Mock EmailUtil behaviors
         mockMimeMessage = mock(MimeMessage.class);
         mockedEmailUtil.when(() ->
-                EmailUtil.createEmail(any(String.class), any(String.class), any(String.class), any(String.class)))
-            .thenReturn(mockMimeMessage);
+                        EmailUtil.createEmail(any(String.class), any(String.class),
+                                any(String.class), any(String.class)))
+                .thenReturn(mockMimeMessage);
         mockedEmailUtil.when(() -> EmailUtil.sendEmail(any(MimeMessage.class)))
-            .thenAnswer(invocation -> {
-                MimeMessage messageSent = invocation.getArgument(0);
-                return null;
-            });
+                .thenAnswer(invocation -> {
+                    invocation.getArgument(0);
+                    return null;
+                });
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedEmailUtil.close();
     }
 
     @Test
     void sendActivationEmail_ShouldNotThrowException_WhenTokenExists() {
         when(vtRepository.findByUserId(userRegisterRequest.getUserId())).thenReturn(Optional.of(vt));
 
-        // When: sendActivationEmail is called
-        String testToEmail = userRegisterRequest.getEmail();
-        String testUserId = userRegisterRequest.getUserId();
-        assertDoesNotThrow(() -> emailService.sendActivationEmail(testToEmail, testUserId));
+        assertDoesNotThrow(() ->
+                emailService.sendActivationEmail(userRegisterRequest.getEmail(), userRegisterRequest.getUserId()));
 
-        verify(vtRepository, times(1)).findByUserId(testUserId);
+        verify(vtRepository, times(1)).findByUserId(userRegisterRequest.getUserId());
+        verify(vtRepository, never()).save(any());
 
-        // Verify that tokenRepository.save was NOT called (since token already exists)
-        verify(vtRepository, never()).save(any(VerificationToken.class));
-
-        // Verify EmailUtil.createEmail was called with expected arguments
-        String expectedSubject = "Activate your account";
-        String activationLink = activationBaseUrl + "/activate?token=" + vt.getToken();
-        String expectedBody = "Click the link to activate (valid for " + expirationMinutes + " minutes):\n" + activationLink;
-        mockedEmailUtil.verify(() ->
-            EmailUtil.createEmail(eq(testToEmail), eq(testFromEmail), eq(expectedSubject), eq(expectedBody)), times(1));
-
-        // Verify EmailUtil.sendEmail was called once with the created MimeMessage
-        mockedEmailUtil.verify(() -> EmailUtil.sendEmail(eq(mockMimeMessage)), times(1));
+        String expectedBody = "Click the link to activate (valid for " + expirationMinutes + " minutes):\n" +
+                activationBaseUrl + "/activate?token=" + vt.getToken();
+        mockedEmailUtil.verify(() -> EmailUtil.createEmail(
+                eq(userRegisterRequest.getEmail()), eq(testFromEmail), eq("Activate your account"),
+                eq(expectedBody)), times(1));
     }
 
+    @Test
+    void sendActivationEmail_ShouldCreateNewToken_WhenTokenDoesNotExist() {
+        when(vtRepository.findByUserId(userRegisterRequest.getUserId())).thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() ->
+                emailService.sendActivationEmail(userRegisterRequest.getEmail(), userRegisterRequest.getUserId()));
+
+        verify(vtRepository).save(any(VerificationToken.class));
+    }
+
+    @Test
+    void sendActivationEmail_ShouldThrowEmailProcessingException_OnMessagingException() {
+        when(vtRepository.findByUserId(any())).thenReturn(Optional.of(vt));
+        mockedEmailUtil.when(() -> EmailUtil.createEmail(any(), any(), any(), any()))
+                .thenThrow(new jakarta.mail.MessagingException("Mock error"));
+
+        Assertions.assertThrows(EmailProcessingException.class, () ->
+                emailService.sendActivationEmail("test@example.com", "any-id"));
+    }
+
+    @Test
+    void sendActivationEmail_ShouldThrowEmailProcessingException_OnSecurityException() {
+        when(vtRepository.findByUserId(any())).thenReturn(Optional.of(vt));
+        mockedEmailUtil.when(() -> EmailUtil.createEmail(any(), any(), any(), any())).thenReturn(mockMimeMessage);
+        mockedEmailUtil.when(() -> EmailUtil.sendEmail(any()))
+                .thenThrow(new java.security.GeneralSecurityException("Security error"));
+
+        Assertions.assertThrows(EmailProcessingException.class, () ->
+                emailService.sendActivationEmail("test@example.com", "any-id"));
+    }
+
+    @Test
+    void sendActivationEmail_ShouldThrowEmailProcessingException_OnIOException() {
+        when(vtRepository.findByUserId(any())).thenReturn(Optional.of(vt));
+        mockedEmailUtil.when(() -> EmailUtil.createEmail(any(), any(), any(), any())).thenReturn(mockMimeMessage);
+        mockedEmailUtil.when(() -> EmailUtil.sendEmail(any()))
+                .thenThrow(new java.io.IOException("IO error"));
+
+        Assertions.assertThrows(EmailProcessingException.class, () ->
+                emailService.sendActivationEmail("test@example.com", "any-id"));
+    }
+
+    @Test
+    void confirmTokenExists_ShouldReturnToken_WhenFound() {
+        when(vtRepository.findByToken(vt.getToken())).thenReturn(Optional.of(vt));
+        VerificationToken result = emailService.confirmTokenExists(vt.getToken());
+        Assertions.assertEquals(vt, result);
+    }
+
+    @Test
+    void confirmTokenExists_ShouldReturnNull_WhenNotFound() {
+        when(vtRepository.findByToken("invalid")).thenReturn(Optional.empty());
+        VerificationToken result = emailService.confirmTokenExists("invalid");
+        Assertions.assertNull(result);
+    }
 
 
 }

@@ -57,8 +57,13 @@ CREATE TRIGGER set_expired_at_before_insert
 BEGIN
     IF NEW.expired_at IS NULL THEN
         SET NEW.expired_at = CURRENT_TIMESTAMP + INTERVAL 1 DAY;
-END IF;
+    END IF;
 END;
 //
 DELIMITER ;
 
+
+# ---------Init--------------
+
+insert into user (id, username, password, is_active, role)
+VALUES (REPLACE(UUID(), '-', ''), 'test', '$2a$11$ifPUemlX2TYtI9NVn9tnr.sZ2DyyMQaJW3DqnRVszm0oKyg.Q.FbG', TRUE, 'SUPER_ADMIN');

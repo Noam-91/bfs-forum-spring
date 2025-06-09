@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.UUID;
 
+import static org.springframework.util.StringUtils.replace;
+
 @Transactional
 @Service
 @Slf4j
@@ -55,11 +57,16 @@ public class EmailService {
 
     // create and send email with EmailUtil
     try {
+
       MimeMessage email = EmailUtil.createEmail(toEmail, fromEmail, subject, body);
       EmailUtil.sendEmail(email);
     } catch (MessagingException e) {
+      log.error("Failed to create or send email to {} due to exception", toEmail, e);
+
       throw new EmailProcessingException("Failed to create email or to send email");
     } catch (IOException | GeneralSecurityException e) {
+      log.error("Failed to send activation email to {} due to exception", toEmail, e);
+
       throw new EmailProcessingException("Failed to send email");
     }
   }
