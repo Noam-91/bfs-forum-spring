@@ -3,8 +3,6 @@ package com.bfsforum.postservice.service;
 import com.bfsforum.postservice.dao.PostRepository;
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.PostStatus;
-import com.bfsforum.postservice.dto.PostCreateDTO;
-import com.bfsforum.postservice.dto.PostResponseDTO;
 import com.bfsforum.postservice.exception.PostNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PostService {
 	private final PostRepository postRepository;
-	private final KafkaMessageService kafkaMessageService;
+//	private final KafkaMessageService kafkaMessageService;
 	
 	// retrieve all post
 	public Page<Post> getAllPosts(int page, int size, String sortBy, String sortDir) {
@@ -112,7 +110,7 @@ public class PostService {
 			post.setUpdatedAt(LocalDateTime.now());
 			return postRepository.save(post);
 		}
-		throw new RuntimeException("Post not found with ID: " + postId);
+		throw new PostNotFoundException(postId);
 	}
 	
 	// retrieve posts by postId
@@ -129,7 +127,7 @@ public class PostService {
 			existingPost.setUpdatedAt(LocalDateTime.now());
 			postRepository.save(existingPost);
 		} else {
-			throw new RuntimeException("Post not found with ID: " + postId);
+			throw new PostNotFoundException(postId);
 		}
 	}
 	

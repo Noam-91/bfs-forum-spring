@@ -16,12 +16,12 @@ public class UserInfoDTO {
 	private Long userId;
 	private String username;
 	private String profileImageURL;
-	private String role; // ADMIN, USER等
+	private String role; // ADMIN, USER
 	
-	// 显示名称的便利方法
+	// display username (from email)
 	public String getDisplayName() {
 		if (username != null) {
-			return username.split("@")[0]; // 使用邮箱前缀
+			return username.split("@")[0]; // prefix of email
 		}
 		return "Anonymous User";
 	}

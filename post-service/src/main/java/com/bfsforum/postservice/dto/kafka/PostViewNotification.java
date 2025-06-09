@@ -7,21 +7,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * @author luluxue
- * @date 2025-06-07
+ * @date 2025-06-08
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PostsEnrichmentResponse {
-	private UUID requestId;
-	private List<PostDTO> posts;
-	private LocalDateTime timestamp;
-	private String error;
+public class PostViewNotification {
+	private Long userId;
+	private String postId;
+	private LocalDateTime viewedAt;
 }

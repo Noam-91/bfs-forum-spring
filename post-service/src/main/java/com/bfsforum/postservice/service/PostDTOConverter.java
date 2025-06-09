@@ -18,6 +18,9 @@ public class PostDTOConverter {
 		PostResponseDTO dto = new PostResponseDTO();
 		dto.setId(post.getId());
 		dto.setUserId(post.getUserId());
+		dto.setTitle(post.getTitle());
+		dto.setContent(post.getContent());
+		return dto;
 	}
 }
 

@@ -6,34 +6,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * @author luluxue
- * @date 2025-06-07
+ * @date 2025-06-08
  */
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostResponseDTO {
-	private String id;
+public class PostSearchDTO {
+	private String keyword;
 	private Long userId;
-	private String title;
-	private String content;
 	private PostStatus status;
+	private Boolean isArchived;
 	private LocalDateTime createdAt;
 	private LocalDateTime updatedAt;
 	
-	private Integer viewCount;
-	private Integer replyCount;
-	
-	private List<String> images;
-	private List<String> attachments;
-	
-	// reply to messages
-	private List<ReplyResponseDTO> replies;
-	
-	// userInfo from other services
-	private UserInfoDTO userInfo;
+	private Integer page = 0;
+	private Integer size = 10;
+	private String sortBy = "createdAt";
+	private String sortDir = "desc";
 }
