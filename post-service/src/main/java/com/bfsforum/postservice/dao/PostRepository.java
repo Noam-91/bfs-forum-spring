@@ -27,6 +27,9 @@ public interface PostRepository extends MongoRepository<Post, String> {
 	
 	Page<Post> findByUserIdAndStatus(Long userId, PostStatus status, Pageable pageable);
 	
+	// add retrieving all posts by multiple postIds
+	List<Post> findAllByIdIn(List<String> postIds);
+	
 	// search post by title or content
 	@Query("{'$or': [{'title': {'$regex': ?0, '$options': 'i'}}, {'content': {'$regex': ?0, '$options': 'i'}}]}")
 	Page<Post> findByTitleOrContentContainingIgnoreCase(String keyword, Pageable pageable);

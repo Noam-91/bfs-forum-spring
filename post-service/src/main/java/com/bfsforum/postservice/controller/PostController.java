@@ -1,14 +1,17 @@
 package com.bfsforum.postservice.controller;
 
+import com.bfsforum.postservice.config.KafkaConsumerConfig;
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.PostStatus;
+import com.bfsforum.postservice.dto.PostCreateDTO;
+import com.bfsforum.postservice.dto.PostUpdateDTO;
 import com.bfsforum.postservice.exception.PostNotFoundException;
+import com.bfsforum.postservice.exception.UnauthorizedException;
 import com.bfsforum.postservice.service.PostService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +26,12 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/posts")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Slf4j
 public class PostController {
-	@Autowired
-	private PostService postService;
+
+	private final PostService postService;
+	private final KafkaConsumerConfig kafkaConsumerConfig;
 
 	@GetMapping
 	public ResponseEntity<Page<Post>> getAllPosts(
@@ -59,25 +65,64 @@ public class PostController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Post> getPostById(@PathVariable String id) {
+	public ResponseEntity<Post> getPostById(
+			@PathVariable String id,
+			@RequestHeader(value="User-Id", required = false) Long userId) {
+		
 		Post post = postService.getPostById(id)
 				.orElseThrow(() -> new PostNotFoundException(id));
 
 		// increase view counts
 		postService.incrementViewCount(id);
+		
+		if (userId != null) {
+			try {
+				kafkaConsumerConfig.sendPostViewNotification(userId, id);
+			} catch (Exception e){
+				log.warn("Failed to send post view notification: userId={}, postId={}", userId, id, e);
+			}
+		}
+		
 		return ResponseEntity.ok(post);
 	}
 
 	@PostMapping
-	public ResponseEntity<Post> createPost(@Valid @RequestBody Post post) {
+	public ResponseEntity<Post> createPost(
+			@Valid @RequestBody PostCreateDTO createDTO,
+			@RequestHeader("User-Id") Long userId) {
+		
+		Post post = new Post();
+		post.setTitle(createDTO.getTitle());
+		post.setContent(createDTO.getContent());
+		post.setUserId(userId);
+		post.setStatus(PostStatus.UNPUBLISHED);
+		
 		Post createdPost = postService.createPost(post);
+		
+//		// TODO: 发送Kafka创建事件（如果需要）
+//		kafkaConsumerConfig.sendPostCreatedEvent(createdPost.getId(), userId, createdPost.getTitle());
 		return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<Post> updatePost(@PathVariable String id, @Valid @RequestBody Post post) {
-			Post updatedPost = postService.updatePost(id, post);
-			return ResponseEntity.ok(updatedPost);
+	public ResponseEntity<Post> updatePost(
+			@PathVariable String id,
+			@Valid @RequestBody PostUpdateDTO updateDTO,
+			@RequestHeader("User-Id") Long userId) {
+		
+		Post existingPost = postService.getPostById(id)
+				.orElseThrow(() -> new PostNotFoundException(id));
+		
+		if (!existingPost.getUserId().equals(userId)) {
+			throw new UnauthorizedException("You can only update your own posts");
+		}
+		Post updatePost = new Post();
+		updatePost.setTitle(updateDTO.getTitle());
+		updatePost.setContent(updateDTO.getContent());
+		updatePost.setUserId(userId);
+		
+		Post updatedPost = postService.updatePost(id, updatePost);
+		return ResponseEntity.ok(updatedPost);
 	}
 
 	@DeleteMapping("/{id}")
