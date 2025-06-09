@@ -19,7 +19,7 @@ public class KafkaConsumerConfig {
   private final PostService postService;
   private final StreamBridge streamBridge;
 
-  @Value("${app.kafka.topics}")
+  @Value("${app.kafka.topics.post-view-notification}")
   private String bindingName;
 
   public KafkaConsumerConfig(PostService postService, StreamBridge streamBridge) {
