@@ -11,11 +11,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author luluxue
@@ -100,6 +100,32 @@ public class PostService {
 		return postRepository.save(post);
 	}
 	
+	// create posts with attachments
+	public Post createPostWithAttachments(String title, String content, Long userId,
+	                                      List<String> imageUrls, List<String> fileUrls){
+		
+		if (title == null || title.equals("") || content == null || content.equals("")) {
+			throw new IllegalArgumentException("Title or content cannot be empty");
+		}
+		
+		Post post = new Post();
+		post.setTitle(title);
+		post.setContent(content);
+		post.setUserId(userId);
+		post.setStatus(PostStatus.UNPUBLISHED);
+		post.setCreatedAt(LocalDateTime.now());
+		post.setUpdatedAt(LocalDateTime.now());
+		
+		if (imageUrls != null && imageUrls.size() > 0) {
+			post.setImages(imageUrls);
+		}
+		if (fileUrls != null && fileUrls.size() > 0) {
+			post.setAttachments(fileUrls);
+		}
+		
+		return postRepository.save(post);
+	}
+	
 	// update posts
 	public Post updatePost(String postId, Post updatedPost) {
 		Optional<Post> existingPost = postRepository.findById(postId);
@@ -113,6 +139,25 @@ public class PostService {
 			return postRepository.save(post);
 		}
 		throw new PostNotFoundException(postId);
+	}
+	
+	// upload attachments
+	public List<String> uploadFiles(List<MultipartFile> files, String folderPath) {
+		if (files == null || files.size() == 0) {
+			return Collections.emptyList();
+		}
+		
+		List<String> urls = new ArrayList<>();
+		for (MultipartFile file : files) {
+			String fileName = folderPath + UUID.randomUUID() + "-" + file.getOriginalFilename();
+			try {
+				urls.add("/uploads/" + fileName);
+			} catch (Exception e) {
+				throw new RuntimeException("Upload failed", e);
+			}
+		}
+		
+		return urls;
 	}
 	
 	// update posts status
@@ -134,7 +179,7 @@ public class PostService {
 				if (!isOwner && !isAdmin) {
 					throw new UnauthorizedException("Not allowed to unhide");
 				}
-				post.setStatus(PostStatus.HIDDEN);
+				post.setStatus(PostStatus.PUBLISHED);
 			}
 			case "archive" -> {
 				if (!isOwner && !isAdmin) {

@@ -6,7 +6,6 @@ import com.bfsforum.postservice.domain.Reply;
 import com.bfsforum.postservice.domain.SubReply;
 import com.bfsforum.postservice.dto.SubReplyDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

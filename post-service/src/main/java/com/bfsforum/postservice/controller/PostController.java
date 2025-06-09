@@ -13,10 +13,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
  * @author luluxue
@@ -218,69 +220,31 @@ public class PostController {
 		return ResponseEntity.ok(updatedPost);
 	}
 	
-//	// admin
-//	@PutMapping("/{id}/ban")
-//	public ResponseEntity<Post> banPost(@PathVariable String id) {
-//
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//
-//		post.setStatus(PostStatus.BANNED);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
-//
-//	@PutMapping("/{id}/unban")
-//	public ResponseEntity<Post> unbanPost(@PathVariable String id) {
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//		post.setStatus(PostStatus.PUBLISHED);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
-//
-//	@PutMapping("/{id}/archive")
-//	public ResponseEntity<Post> archivePost(@PathVariable String id,
-//	                                        @RequestHeader("User-Id") Long userId,
-//	                                        @RequestHeader(value = "Role", defaultValue = "USER") String role) {
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//		post.setIsArchived(true);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
-//
-//	@PutMapping("/{id}/unarchive")
-//	public ResponseEntity<Post> unarchivePost(@PathVariable String id,
-//	                                          @RequestHeader("User-Id") Long userId,
-//	                                          @RequestHeader(value = "Role", defaultValue = "USER") String role) {
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//
-//		post.setIsArchived(false);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
-//
-//	@PutMapping("/{id}/hide")
-//	public ResponseEntity<Post> hidePost(@PathVariable String id,
-//	                                     @RequestHeader("User-Id") Long userId,
-//	                                     @RequestHeader(value = "Role", defaultValue = "USER") String role) {
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//		post.setStatus(PostStatus.HIDDEN);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
-//
-//	@PutMapping("/{id}/unhide")
-//	public ResponseEntity<Post> unhidePost(@PathVariable String id,
-//	                                       @RequestHeader("User-Id") Long userId,
-//	                                       @RequestHeader(value = "Role", defaultValue = "USER") String role) {
-//		Post post = postService.getPostById(id)
-//				.orElseThrow(() -> new PostNotFoundException(id));
-//		post.setStatus(PostStatus.PUBLISHED);
-//		Post updatedPost = postService.updatePost(id, post);
-//		return ResponseEntity.ok(updatedPost);
-//	}
+	@PutMapping("/{id}/action")
+	public ResponseEntity<Post> updatePostAction(
+			@PathVariable String id,
+			@RequestParam String action,
+			@RequestHeader("User-id") Long userId,
+			@RequestHeader(value = "Role", defaultValue = "USER") String role) {
+		
+		Post updatedPost = postService.updatePostStatus(id, action, userId, role);
+		return ResponseEntity.ok(updatedPost);
+	}
+	
+	// handle attachments
+	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Post> createPost(
+			@RequestPart("title") String title,
+			@RequestPart("content") String content,
+			@RequestPart(value = "images", required = false) List<MultipartFile> images,
+			@RequestPart(value = "files", required = false) List<MultipartFile> files,
+			@RequestHeader("User-Id") Long userId) {
+		
+		List<String> imageUrls = postService.uploadFiles(images, "images/");
+		List<String> fileUrls = postService.uploadFiles(files, "files/");
+		
+		Post post = postService.createPostWithAttachments(title, content, userId, imageUrls, fileUrls);
+		return ResponseEntity.status(HttpStatus.CREATED).body(post);
+	}
+	
 }
