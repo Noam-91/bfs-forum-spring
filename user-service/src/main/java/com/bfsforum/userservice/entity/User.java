@@ -10,13 +10,15 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(name = "user")
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder
 public class User {
+
     @Id
-    @UuidGenerator
-    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "BINARY(16)")
-    private UUID id;
+    private String id;
+
+    public User() {
+        this.id = UUID.randomUUID().toString();
+    }
 
     @Column(nullable = false)
     private String password;
@@ -32,5 +34,4 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     private UserProfile profile;
-
 }

@@ -59,7 +59,7 @@ public class UserController {
                 "userId", user.getId().toString()
         ));
     }
-    //     "userId": "53c5d457-8b7f-4197-a50a-5db5d48c29bb",
+    //     "userId": "1cdab9ed-2c09-4d3e-928f-039d6a4abce9",
 
     @GetMapping("/verify")
     @Operation(summary = "Email verification", description = "Activate user verification based on the token in the email verification link")
@@ -81,11 +81,12 @@ public class UserController {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
         }
     }
+    // 962c152f-c68c-43a2-a92f-5f02e26d3115
 
     // mock a real reply process with email reply message
     @PostMapping("/mock-email-reply")
     public void mockEmailReply(@RequestParam String token,
-                               @RequestParam UUID userId,
+                               @RequestParam String userId,
                                @RequestParam String correlationId) {
 
         EmailVerificationReply reply = EmailVerificationReply.builder()
@@ -101,6 +102,7 @@ public class UserController {
         log.info("Received correlationId: {}", correlationId);
         kafkaConsumerConfig.emailVerificationReplyConsumer().accept(message);
     }
+
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Get user profile", description = "Retrieve profile of the user by ID.")
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully",
@@ -109,7 +111,7 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "User not found",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = "{ \"message\": \"User not found\" }")))
-    public ResponseEntity<?> getProfile(@PathVariable UUID userId) {
+    public ResponseEntity<?> getProfile(@PathVariable String userId) {
         try {
             User user = userService.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
@@ -133,7 +135,7 @@ public class UserController {
 
     @PutMapping("/{userId}/profile")
     @Operation(summary = "Update user profile", description = "Update profile information for a given user.")
-    public ResponseEntity<Map<String, String>> updateProfile(@PathVariable UUID userId,
+    public ResponseEntity<Map<String, String>> updateProfile(@PathVariable String userId,
                                                              @Valid @RequestBody UserProfileDto dto) {
         try {
             userService.updateProfile(userId, dto);
@@ -150,7 +152,7 @@ public class UserController {
         description = "Admin can activate or deactivate a user by setting isActive = true/false"
     )
     public ResponseEntity<Map<String, String>> toggleUserActivation(
-        @PathVariable UUID userId,
+        @PathVariable String userId,
         @RequestBody Map<String, Boolean> request) {
 
         boolean isActive = request.getOrDefault("isActive", false);
@@ -164,14 +166,14 @@ public class UserController {
             summary = "Activate user via email service",
             description = "Email service can only activate a user"
     )
-    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable UUID userId) {
+    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable String userId) {
         userService.setUserActivation(userId, true);
         return ResponseEntity.ok(Map.of("message", "User activated by email service"));
     }
 
     @PostMapping("/{userId}/role")
     @Operation(summary = "Update user role", description = "Change a user's role (e.g. promote to admin).")
-    public ResponseEntity<Map<String, String>> updateUserRole(@PathVariable UUID userId,
+    public ResponseEntity<Map<String, String>> updateUserRole(@PathVariable String userId,
                                                               @RequestParam Role role) {
         try {
             userService.updateUserRole(userId, role);

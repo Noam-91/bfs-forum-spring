@@ -21,9 +21,15 @@ import java.time.LocalDateTime;
 @Builder
 public class UserProfile {
     @Id
-    @UuidGenerator
-    @Column(name = "id", updatable = false, nullable = false, columnDefinition = "BINARY(16)")
-    private UUID id;
+    @Column(name = "id", nullable = false, updatable = false, length = 36)
+    private String id;
+
+    @PrePersist
+    public void ensureId() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+    }
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = false;

@@ -3,7 +3,7 @@ USE bfsforum;
 
 DROP TABLE IF EXISTS user;
 CREATE TABLE user (
-                      id BINARY(16) PRIMARY KEY,
+                      id VARCHAR(36) PRIMARY KEY,
                       username VARCHAR(255) UNIQUE NOT NULL,
                       password VARCHAR(255) NOT NULL,
                       is_active BOOLEAN DEFAULT FALSE,
@@ -12,8 +12,8 @@ CREATE TABLE user (
 
 DROP TABLE IF EXISTS user_profile;
 CREATE TABLE user_profile (
-                              id BINARY(16) PRIMARY KEY,
-                              user_id BINARY(16) NOT NULL,
+                              id VARCHAR(36) PRIMARY KEY,
+                              user_id VARCHAR(36) NOT NULL,
                               is_active BOOLEAN DEFAULT FALSE,
                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               img_url VARCHAR(2048),
