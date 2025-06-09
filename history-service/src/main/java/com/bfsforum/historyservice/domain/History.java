@@ -17,14 +17,14 @@ import java.util.UUID;
 public class History {
     @Id
     @UuidGenerator
-    @Column(name = "id", columnDefinition = "BINARY(16)")
-    private UUID historyId;
+    @Column(name = "id")
+    private String historyId;
 
-    @Column(name = "user_id", columnDefinition = "BINARY(16)")
-    private UUID userId;
+    @Column(name = "user_id")
+    private String userId;
 
-    @Column(name = "post_id", columnDefinition = "BINARY(16)")
-    private UUID postId;
+    @Column(name = "post_id")
+    private String postId;
 
     @CreationTimestamp
     @Column(name = "viewed_at", nullable = false, updatable = false)

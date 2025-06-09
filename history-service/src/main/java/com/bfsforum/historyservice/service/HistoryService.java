@@ -49,7 +49,7 @@ public class HistoryService {
     private String requestBindingName;
     /** A wrapper only for test purpose of jap findByUserIdAndPostId method
      */
-    public Optional<History> getByUserAndPost(UUID userId, UUID postId) {
+    public Optional<History> getByUserAndPost(String userId, String postId) {
         return historyRepo.findByUserIdAndPostId(userId, postId);
     }
 
@@ -60,7 +60,7 @@ public class HistoryService {
      */
     // evict the cache every time when new record is created
     @CacheEvict(cacheNames = "history", key = "#userId")
-    public History recordView(UUID userId, UUID postId) {
+    public History recordView(String userId, String postId) {
         LocalDateTime now = LocalDateTime.now();
         return historyRepo.findByUserIdAndPostId(userId, postId)
                 .map(h -> {
@@ -80,24 +80,24 @@ public class HistoryService {
      */
     // cache implemented to reuse the enriched history results for the next 2 filter functionalities
     @Cacheable(cacheNames = "history", key = "#userId")
-    public List<EnrichedHistoryDto> loadFullEnrichedHistory(UUID userId) {
+    public List<EnrichedHistoryDto> loadFullEnrichedHistory(String userId) {
         // 1) raw history list to postId list
         List<History> raw = historyRepo.findByUserIdOrderByViewedAtDesc(userId);
         if (raw.isEmpty()) {
             return Collections.emptyList();
         }
-        List<UUID> postIds = raw.stream().map(History::getPostId).collect(Collectors.toList());
+        List<String> postIds = raw.stream().map(History::getPostId).collect(Collectors.toList());
 
         // 2) build & send enrichment request
         String correlationId = UUID.randomUUID().toString();
-            // a. create a CompletableFuture and store it
+        // a. create a CompletableFuture and store it
         CompletableFuture<List<Post>> future = requestReplyManager.createAndStoreFuture(correlationId);
-            // b. prepare and send the Kafka request message with correlationId in header
-        Message<List<UUID>> message = MessageBuilder.withPayload(postIds)
+        // b. prepare and send the Kafka request message with correlationId in header
+        Message<List<String>> message = MessageBuilder.withPayload(postIds)
                 .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
                 .build();
         streamBridge.send(requestBindingName, message);
-            // c. wait for the future to complete with a timeout
+        // c. wait for the future to complete with a timeout
         List<Post> repliedPosts = requestReplyManager.awaitFuture(correlationId, future);
 //        PostsEnrichmentRequest req =
 //                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
@@ -117,7 +117,7 @@ public class HistoryService {
 
         // 3) merge into EnrichedHistoryDto
         // build lookup table for PostDto (key: postId, val: PostDto)
-        Map<UUID, PostDto> postsById = repliedPosts
+        Map<String, PostDto> postsById = repliedPosts
                 .stream()
                 .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().postId(p.getId()).title(p.getTitle()).content(p.getContent()).build()));
         // transform raw history to enriched Dtos
@@ -144,7 +144,7 @@ public class HistoryService {
     }
 
     public Page<EnrichedHistoryDto> getEnrichedHistory(
-            UUID userId, Pageable pageable) {
+            String userId, Pageable pageable) {
         HistoryService proxy = (HistoryService) AopContext.currentProxy();
         List<EnrichedHistoryDto> full = proxy.loadFullEnrichedHistory(userId);
         return toPage(full, pageable);
@@ -153,7 +153,7 @@ public class HistoryService {
     /**
      * Fetch full enriched history then filter by keyword (in title or content)
      */
-    public Page<EnrichedHistoryDto> searchByKeyword(UUID userId, String keyword, Pageable pageable) {
+    public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
         try {
             String lower = keyword.toLowerCase();
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
@@ -174,7 +174,7 @@ public class HistoryService {
     /**
      * Filter cached enriched history by bonded startDate and endDate.
      */
-    public Page<EnrichedHistoryDto> searchByDate(UUID userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+    public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         try {
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()

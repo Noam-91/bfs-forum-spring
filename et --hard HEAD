@@ -1,0 +1,48 @@
+[33m3871845[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Merge branch 'yu'
+[33mb9928cf[m Merge branch 'main' of https://github.com/Noam-91/bfs-forum-spring
+[33m8e841f0[m[33m ([m[1;31morigin/yu[m[33m, [m[1;32myu[m[33m)[m Merge remote-tracking branch 'origin/main' into yu
+[33m1688681[m integrated kafka, fixed search by date, add swagger
+[33mc57213a[m revise kafka, add controller test
+[33m9e09296[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #9 from Noam-91/Josh
+[33mcb49257[m[33m ([m[1;31morigin/Josh[m[33m)[m Update pom.xml for dependency or plugin changes
+[33mceb7824[m Add missing test updates for email verification and mocking logic
+[33m473ff77[m Add async email verification via Kafka + test coverage with mock reply endpoint
+[33m7c2a4cc[m Merge remote-tracking branch 'origin/main' into Josh
+[33m0c20437[m user registration + verification kafka integration
+[33m992a123[m Delete secret
+[33m7f7de53[m Merge remote-tracking branch 'origin/main' into yu
+[33me00acc3[m WIP: save local changes before merging origin/main
+[33m412df65[m Merge pull request #6 from Noam-91/Josh
+[33m1261277[m Merge pull request #7 from lu-lu-xue/forum/feature/post-create-api
+[33meae28e5[m implement kafka Service and Config to interac with historyService
+[33mda911a9[m Implement user activation APIs and tests
+[33m0fa9443[m implement DTOs for kafka
+[33m0a639aa[m add DTO for kafka
+[33m4376c6e[m Remove MongoConnectionTest.java containing sensitive info and ignore it
+[33m5d0ff26[m Add kafka and Jackson
+[33mfdd5e9b[m Add .gitignore and stop tracking local config files
+[33mc1aa632[m restore application.yml, .env, application.properties
+[33m7702d67[m add docker-compose.yml
+[33m1b3f156[m Merge remote-tracking branch 'upstream/main' into forum/feature/post-create-api Sync with latest updates from main branch
+[33mbb3e10d[m add DTOs, exceptions, configs
+[33m47e525a[m add PostController
+[33m4ac9395[m add PostService
+[33me2c8ca1[m add setter and getter, application.yml
+[33m638918d[m preliminary stage of history-service implementation
+[33m9d05961[m preliminary stage of history-service implementation
+[33mb95d1de[m Merge pull request #4 from lu-lu-xue/forum/feature/post-create-api
+[33m367ea52[m add repository
+[33m6625159[m add domain
+[33m4230df8[m Implmenet(UserService): register, profile update, pagination, role, and AOP exception handling.
+[33mfa9b0b3[m Merge pull request #2 from Noam-91/noam
+[33md1a8baa[m Add gateway dependency to Api-gateway and modify some configurations
+[33m968f92f[m Merge pull request #1 from Noam-91/noam
+[33m0ca5543[m reset datasource Further refine swagger for login
+[33m0864b51[m reset swagger setting and Role setting
+[33m792bfa2[m Change dependency settings to make everything compatible Add Swagger and Actuator
+[33m35952bd[m add packages for postservice
+[33m8164e00[m update .gitignore excluding all .idea, init.sql, postman json, and datasource.yml
+[33m38c9630[m Complete Login feature with test cases for service and controller
+[33m16b13ba[m update readme and minor fixes on parent pom
+[33mf6c6961[m init
+[33m2ec05db[m Initial commit

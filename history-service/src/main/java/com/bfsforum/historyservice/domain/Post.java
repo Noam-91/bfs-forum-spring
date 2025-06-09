@@ -15,9 +15,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Post {
-    private UUID id;
+    private String id;
 
-    private UUID userId;
+    private String userId;
 
     private String title;
 

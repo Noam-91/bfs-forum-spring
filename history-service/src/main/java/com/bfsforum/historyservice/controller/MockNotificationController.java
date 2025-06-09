@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.Message;

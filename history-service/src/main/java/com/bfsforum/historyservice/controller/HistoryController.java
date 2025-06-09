@@ -20,7 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 
-import java.util.UUID;
 @Tag(name = "History", description = "Operations related to user history retrieval and management")
 @RestController
 @RequestMapping("/history")
@@ -36,10 +35,9 @@ public class HistoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "History retrieved successfully", content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     public ResponseEntity<Page<EnrichedHistoryDto>> getHistory(
-            @RequestHeader(name = "X-User-Id") UUID userId,
+            @RequestHeader(name = "X-User-Id") String userId,
             @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
@@ -48,7 +46,7 @@ public class HistoryController {
         return ResponseEntity.ok(data);
 
     }
-//    // test controller for saving a String in db
+    //    // test controller for saving a String in db
 //    @PutMapping("/save")
 //    public ResponseEntity<?> saveHistory(
 //            @RequestParam("userId") String userId,
@@ -58,20 +56,18 @@ public class HistoryController {
 //        HistoryTest h = historyService.recordViewInString(userId, postId);
 //        return ResponseEntity.ok(h);
 //    }
-@Operation(
-        summary = "Search viewed history",
-        description = "Search viewed history by keyword or by a start–end date range for the authenticated user"
-)
-@ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Search results retrieved", content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "400", description = "Bad request if both keyword and date-range are provided, or if only one of startDate/endDate is supplied", content = @Content),
-        @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response during search", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content
-        )
-})
+    @Operation(
+            summary = "Search viewed history",
+            description = "Search viewed history by keyword or by a start–end date range for the authenticated user"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Search results retrieved", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request if both keyword and date-range are provided, or if only one of startDate/endDate is supplied", content = @Content),
+            @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response during search", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     @GetMapping("/search")
     public ResponseEntity<?> search(
-            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(name = "date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
