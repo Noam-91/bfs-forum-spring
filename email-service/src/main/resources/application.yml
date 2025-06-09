@@ -2,10 +2,10 @@ spring:
   application:
     name: email-service
   datasource:
-    url: jdbc:mysql://localhost:3306/bfsforum
+    url: jdbc:mysql://127.0.0.1:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 123456
+    password: H7z0j41996
   mail:
     host: smtp.gmail.com
     port: 587
@@ -25,6 +25,7 @@ spring:
         registerNotificationConsumer-in-0:
           destination: register-notification
           group:  ${spring.application.name}
+
         verificationRequestConsumer-in-0:
           destination: verification-request
           group:  ${spring.application.name}
@@ -32,8 +33,11 @@ spring:
           destination: verification-response
 
   kafka:
+    bindings:
+      registerNotificationConsumer-in-0:
+        consumer:
+          auto-offset-reset: earliest
     bootstrap-servers: localhost:9092
-
 
 token:
   expiration:
@@ -58,8 +62,8 @@ eureka:
     fetch-registry: false
 
 
-logging:
-  level:
-    org.apache.kafka: DEBUG
-    org.springframework.kafka: DEBUG
-    org.springframework.cloud.stream: DEBUG
+#logging:
+#  level:
+#    org.apache.kafka: DEBUG
+#    org.springframework.kafka: DEBUG
+#    org.springframework.cloud.stream: DEBUG

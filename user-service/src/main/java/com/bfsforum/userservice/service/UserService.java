@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -76,7 +77,7 @@ public class UserService {
                 .isActive(true)
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
-                .createdAt(LocalDateTime.now())
+                .createdAt(Instant.now())
                 .imgUrl(dto.getImgUrl())
                 .user(user)
                 .build();
@@ -115,7 +116,7 @@ public class UserService {
         log.info("Send token verification request：correlationId={}, token={}", correlationId, token);
         streamBridge.send(tokenVerifyBinding, message);
 
-        return requestReplyManager.awaitFuture(correlationId, future, 86400);
+        return requestReplyManager.awaitFuture(correlationId, future);
     }
 
     @Value("${bfs-forum.kafka.user-info-reply-binding-name}")
@@ -213,8 +214,8 @@ public class UserService {
      * @param expiresAt the expiration time of the token
      * @throws RuntimeException if token is expired or user not found
      */
-    public void activateVerifiedUser(String userId, LocalDateTime expiresAt) {
-        if (expiresAt.isBefore(LocalDateTime.now())) {
+    public void activateVerifiedUser(String userId, Instant expiresAt) {
+        if (expiresAt.isBefore(Instant.now())) {
             throw new RuntimeException("Token has expired");
         }
 

@@ -26,6 +26,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -83,25 +84,6 @@ public class UserController {
     }
     // 962c152f-c68c-43a2-a92f-5f02e26d3115
 
-    // mock a real reply process with email reply message
-    @PostMapping("/mock-email-reply")
-    public void mockEmailReply(@RequestParam String token,
-                               @RequestParam String userId,
-                               @RequestParam String correlationId) {
-
-        EmailVerificationReply reply = EmailVerificationReply.builder()
-                .token(token)
-                .userId(userId)
-                .expiresAt(LocalDateTime.now().plusMinutes(5))
-                .build();
-
-        Message<EmailVerificationReply> message = MessageBuilder.withPayload(reply)
-                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
-                .build();
-
-        log.info("Received correlationId: {}", correlationId);
-        kafkaConsumerConfig.emailVerificationReplyConsumer().accept(message);
-    }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Get user profile", description = "Retrieve profile of the user by ID.")

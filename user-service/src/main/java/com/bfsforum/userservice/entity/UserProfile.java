@@ -6,12 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.UuidGenerator;
 
+import java.time.Instant;
 import java.util.UUID;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_profile")
@@ -36,7 +33,7 @@ public class UserProfile {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "img_url", length = 2048)
     private String imgUrl;
