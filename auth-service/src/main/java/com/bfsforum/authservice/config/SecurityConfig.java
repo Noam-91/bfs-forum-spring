@@ -17,17 +17,7 @@ public class SecurityConfig { // Renamed from previous SwaggerConfig to Security
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests(authorize -> authorize
-//            // Permit access to Swagger/OpenAPI endpoints
-//            .requestMatchers(
-//                "/swagger-ui.html",
-//                "/swagger-ui/**",
-//                "/v3/api-docs/**",
-//                "/v2/api-docs",
-//                "/webjars/**",
-//                "/actuator/**" // If you have Spring Boot Actuator and want it public
-//            ).permitAll()
-            .anyRequest().permitAll()
+        .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll()
         );
 
     return http.build();

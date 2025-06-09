@@ -1,74 +1,70 @@
 package com.bfsforum.emailservice.service;
 
 import com.bfsforum.emailservice.dao.VerificationTokenRepository;
-import com.bfsforum.emailservice.dto.VerificationToken;
+import com.bfsforum.emailservice.domain.VerificationToken;
+import com.bfsforum.emailservice.exception.EmailProcessingException;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.UUID;
 
+@Transactional
 @Service
+@Slf4j
 public class EmailService {
+  @Value("${app.activation.base-url}")
+  private String activationBaseUrl;
+  @Value("${token.expiration.minutes}")
+  private long expirationMinutes;
+  @Value("${app.email.from}")
+  private String fromEmail;
+  private final VerificationTokenRepository tokenRepository;
 
-    @Value("${app.activation.base-url}")
-    private String activationBaseUrl;
+  public EmailService(VerificationTokenRepository tokenRepository) {
+    this.tokenRepository = tokenRepository;
+  }
 
-    @Value("${token.expiration.minutes}")
-    private long expirationMinutes;
+  /**
+   * Send activation email to user via Gmail API
+   *
+   * @param toEmail
+   * @param userId
+   * @throws EmailProcessingException
+   */
+  public void sendActivationEmail(String toEmail, String userId) throws EmailProcessingException {
+    // Lookup verification, generate new if not exist
+    VerificationToken vt = tokenRepository.findByUserId(userId).orElseGet(() -> {
+      VerificationToken newVT = VerificationToken.builder()
+          .token(UUID.randomUUID().toString())
+          .userId(userId)
+          .build();
+      tokenRepository.save(newVT);
+      return newVT;
+    });
 
-    @Value("${app.email.from}")
-    private String fromEmail;
+    String tokenStr = vt.getToken();
+    String activationLink = activationBaseUrl + "/activate?token=" + tokenStr;
+    String subject = "Activate your account";
+    String body = "Click the link to activate (valid for " + expirationMinutes + " minutes):\n" + activationLink;
 
-    private final VerificationTokenRepository tokenRepository;
-
-    public EmailService(VerificationTokenRepository tokenRepository) {
-        this.tokenRepository = tokenRepository;
+    // create and send email with EmailUtil
+    try {
+      MimeMessage email = EmailUtil.createEmail(toEmail, fromEmail, subject, body);
+      EmailUtil.sendEmail(email);
+    } catch (MessagingException e) {
+      throw new EmailProcessingException("Failed to create email or to send email");
+    } catch (IOException | GeneralSecurityException e) {
+      throw new EmailProcessingException("Failed to send email");
     }
+  }
 
-    public void sendActivationEmail(String toEmail, UUID userId) throws Exception {
-        Optional<VerificationToken> existingToken = tokenRepository.findByUserId(userId);
-
-        if (existingToken.isPresent()) {
-            VerificationToken token = existingToken.get();
-            if (Duration.between(token.getCreatedAt(), Instant.now()).toMinutes() < expirationMinutes) {
-                throw new IllegalStateException("Activation link already sent. " +
-                        "Please wait up to " + expirationMinutes + " minutes.");
-            }
-        }
-
-        String tokenStr = UUID.randomUUID().toString();
-
-        VerificationToken newToken = new VerificationToken();
-        newToken.setToken(tokenStr);
-        newToken.setUserId(userId);
-
-        tokenRepository.save(newToken);
-
-        String activationLink = activationBaseUrl + "/activate?token=" + tokenStr;
-        String subject = "Activate your account";
-        String body = "Click the link to activate (valid for " + expirationMinutes + " minutes):\n" + activationLink;
-
-        var email = CreateEmail.createEmail(toEmail, fromEmail, subject, body);
-        SendMessage.sendEmail(email);
-    }
-
-
-    public Optional<VerificationToken> resolveToken(String token) {
-        return tokenRepository.findById(token)
-                .filter(t -> t.getExpiredAt().isAfter(Instant.now()));
-    }
-
-
-
-    public void consumeToken(String token) {
-        tokenRepository.findById(token)
-                .filter(t -> t.getExpiredAt().isAfter(Instant.now()))
-                .map(t -> {
-                    tokenRepository.delete(t);
-                    return t.getUserId().toString(); // or return email if you store that too
-                });
-    }
+  public VerificationToken confirmTokenExists(String token) {
+    return tokenRepository.findByToken(token).orElse(null);
+  }
 }

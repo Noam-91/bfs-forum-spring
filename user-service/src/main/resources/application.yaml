@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: user-service
+
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -13,8 +16,24 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
+  cloud:
+    stream:
+      function:
+        definition: emailVerificationReplyConsumer
+      bindings:
+        tokenVerify-out-0:
+          destination: token-verify-request
+        emailVerificationReplyConsumer-in-0:
+          destination: token-verify-reply
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
 eureka:
   client:
     enabled: false
 
-spring.application.name: user-service
+bfs-forum:
+  kafka:
+    user-register-binding-name: tokenVerify-out-0
+    token-verify-binding-name: tokenVerify-out-0
