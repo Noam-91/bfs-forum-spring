@@ -76,7 +76,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body("Token invalid or not found");
             }
 
-            userService.activateVerifiedUser(reply.getUserId(), reply.getExpiresAt());
+            userService.activateVerifiedUser(reply.getUserId(), reply.getExpiredAt());
             return ResponseEntity.ok("Email verification successful, welcome!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());

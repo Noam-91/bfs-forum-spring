@@ -13,5 +13,5 @@ public class EmailVerificationReply {
     private String token;
     private String userId;
     private Instant createAt;
-    private Instant expiresAt;
+    private Instant expiredAt;
 }
