@@ -25,7 +25,10 @@ public class KafkaConsumerConfig {
     private final RequestReplyManager<EmailVerificationReply> requestReplyManager;
     private final UserRepository userRepository;
     private final StreamBridge streamBridge;
-
+    @Bean
+    public RequestReplyManager<EmailVerificationReply> emailVerificationReplyRequestReplyManager() {
+        return new RequestReplyManager<>();
+    }
     public KafkaConsumerConfig(RequestReplyManager<EmailVerificationReply> requestReplyManager,
                                UserRepository userRepository,
                                StreamBridge streamBridge) {
