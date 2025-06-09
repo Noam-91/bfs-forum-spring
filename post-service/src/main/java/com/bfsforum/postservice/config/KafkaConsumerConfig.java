@@ -1,6 +1,7 @@
 package com.bfsforum.postservice.config;
 
 import com.bfsforum.postservice.domain.Post;
+import com.bfsforum.postservice.exception.PostNotFoundException;
 import com.bfsforum.postservice.service.PostService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,8 @@ public class KafkaConsumerConfig {
     return message -> {
       String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
       String postId = message.getPayload();
-      Post post = postService.getPostById(postId);
+      Post post = postService.getPostById(postId)
+              .orElseThrow(() -> new PostNotFoundException(postId));
       Message<Post> replyMessage = MessageBuilder.withPayload(post)
           .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
           .build();
