@@ -48,7 +48,7 @@ public class Post {
 	private List<String> images = new ArrayList<>();
 	private List<String> attachments = new ArrayList<>();
 	
-	private List<PostReply> postReplies = new ArrayList<>();
+	private List<Reply> replies = new ArrayList<>();
 	
 	// 统计字段 (可以通过postReplies计算，但为了性能可以单独存储)
 	private Integer viewCount = 0;
@@ -121,6 +121,14 @@ public class Post {
 		this.updatedAt = updatedAt;
 	}
 
+	public List<Reply> getReplies(List<Reply> replies) {
+		return replies;
+	}
+	
+	public void setReplies(List<Reply> replies) {
+		this.replies = replies;
+	}
+	
 	public List<String> getImages() {
 		return images;
 	}
@@ -136,14 +144,7 @@ public class Post {
 	public void setAttachments(List<String> attachments) {
 		this.attachments = attachments;
 	}
-
-	public List<PostReply> getPostReplies() {
-		return postReplies;
-	}
-
-	public void setPostReplies(List<PostReply> postReplies) {
-		this.postReplies = postReplies;
-	}
+	
 
 	public Integer getViewCount() {
 		return viewCount;

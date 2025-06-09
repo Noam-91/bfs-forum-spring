@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -116,6 +118,15 @@ public class PostService {
 	// retrieve posts by postId
 	public Optional<Post> getPostById(String postId) {
 		return postRepository.findById(postId);
+	}
+	
+	// retrieve multiple posts by postIds
+	public List<Post> getPostsByIds(List<String> postIds) {
+		if (postIds == null || postIds.isEmpty()) {
+			return Collections.emptyList();
+		}
+		
+		return postRepository.findAllByIdIn(postIds);
 	}
 	
 	// delete posts (soft delete) - not deleting from DB, just set the status

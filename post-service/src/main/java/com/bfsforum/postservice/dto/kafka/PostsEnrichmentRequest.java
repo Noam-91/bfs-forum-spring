@@ -23,7 +23,5 @@ import java.util.UUID;
 public class PostsEnrichmentRequest {
 	private UUID requestId;
 	private List<String> postIds;
-	private LocalDateTime requestTime;
-	
 	private Set<String> requestedFields;
 }

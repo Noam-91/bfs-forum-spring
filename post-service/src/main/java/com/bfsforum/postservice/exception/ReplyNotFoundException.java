@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
  * @date 2025-06-08
  */
 
-
 public class ReplyNotFoundException extends BaseException {
 	private static final String ERROR_CODE = "REPLY_NOT_FOUND";
 	private static final HttpStatus HTTP_STATUS = HttpStatus.NOT_FOUND;
