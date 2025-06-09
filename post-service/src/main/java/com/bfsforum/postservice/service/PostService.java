@@ -4,8 +4,8 @@ import com.bfsforum.postservice.dao.PostRepository;
 import com.bfsforum.postservice.domain.Post;
 import com.bfsforum.postservice.domain.PostStatus;
 import com.bfsforum.postservice.exception.PostNotFoundException;
+import com.bfsforum.postservice.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -114,6 +114,59 @@ public class PostService {
 		}
 		throw new PostNotFoundException(postId);
 	}
+	
+	// update posts status
+	public Post updatePostStatus(String postId, String status, Long userId, String role) {
+		Post post = postRepository.findById(postId)
+				.orElseThrow(() -> new PostNotFoundException(postId));
+		
+		boolean isOwner = post.getUserId().equals(userId);
+		boolean isAdmin = "ADMIN".equalsIgnoreCase(role);
+		
+		switch (status.toLowerCase()) {
+			case "hide" -> {
+				if (!isOwner && !isAdmin) {
+					throw new UnauthorizedException("Not allowed to hide");
+				}
+				post.setStatus(PostStatus.HIDDEN);
+			}
+			case "unhide" -> {
+				if (!isOwner && !isAdmin) {
+					throw new UnauthorizedException("Not allowed to unhide");
+				}
+				post.setStatus(PostStatus.HIDDEN);
+			}
+			case "archive" -> {
+				if (!isOwner && !isAdmin) {
+					throw new UnauthorizedException("Not allowed to archive");
+				}
+				post.setIsArchived(true);
+			}
+			case "unarchive" -> {
+				if (!isOwner && !isAdmin) {
+					throw new UnauthorizedException("Not allowed to unarchive");
+				}
+				post.setIsArchived(false);
+			}
+			case "ban" -> {
+				if (!isAdmin) {
+					throw new UnauthorizedException("Only admin can ban");
+				}
+				post.setStatus(PostStatus.BANNED);
+			}
+			case "unban" -> {
+				if (!isAdmin) {
+					throw new UnauthorizedException("Only admin can unban");
+				}
+				post.setStatus(PostStatus.PUBLISHED);
+			}
+			default -> throw new IllegalArgumentException("Unknown status " + status);
+		}
+		
+		post.setUpdatedAt(LocalDateTime.now());
+		return postRepository.save(post);
+	}
+	
 	
 	// retrieve posts by postId
 	public Optional<Post> getPostById(String postId) {
