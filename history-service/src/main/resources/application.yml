@@ -11,11 +11,11 @@ spring:
   cloud:
     function:
       definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
-#      bindings:
-#        postEnrichRequestEventConsumer-in-0:
-#          content-type: application/json
-#        postNotificationEventConsumer-in-0:
-#          content-type: application/json
+      bindings:
+        postEnrichRequestEventConsumer-in-0:
+          content-type: application/json
+        postNotificationEventConsumer-in-0:
+          content-type: application/json
 
     stream:
       bindings:
