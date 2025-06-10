@@ -49,6 +49,10 @@ bfs-forum:
     token-verify-binding-name: tokenVerify-out-0
     user-info-reply-binding-name: userInfoReply-out-0
 
+server:
+  port: 0
+
 eureka:
   client:
-    enabled: false
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/

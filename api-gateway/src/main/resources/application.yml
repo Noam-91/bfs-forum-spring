@@ -20,6 +20,18 @@ spring:
           uri: lb://auth-service
           predicates:
             - Path=/auth/**, /auth
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/posts/**, /posts
+        - id: history-service
+          uri: lb://history-service
+          predicates:
+            - Path=/history/**, /history
         - id: message-service
           uri: lb://message-service
           predicates:
