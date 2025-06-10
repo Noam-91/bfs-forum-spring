@@ -1,18 +1,23 @@
 package com.bfsforum.historyservice.domain;
 
-import lombok.*;
+import com.bfsforum.postservice.domain.PostStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+
 
 @Data
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Post {
+    @Id
     private String id;
 
     private String userId;
@@ -23,23 +28,28 @@ public class Post {
 
     private String title;
 
-
     private String content;
 
-    private Boolean isArchived = false;
+    @Builder.Default
+    private String status = PostStatus.UNPUBLISHED.toString();
 
-    private PostStatus status = PostStatus.UNPUBLISHED;  // post status
+    private LocalDateTime createdAt;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
 
-
+    // attachments
+    @Builder.Default
     private List<String> images = new ArrayList<>();
+    @Builder.Default
     private List<String> attachments = new ArrayList<>();
-
-    private List<PostReply> postReplies = new ArrayList<>();
-
+    @Builder.Default
+    private List<Reply> replies = new ArrayList<>();
+    @Builder.Default
     private Integer viewCount = 0;
+    @Builder.Default
     private Integer replyCount = 0;
 
 }
+
+
+

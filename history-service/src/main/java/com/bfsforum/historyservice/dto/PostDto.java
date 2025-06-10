@@ -17,7 +17,6 @@ public class PostDto {
     private String  content;
     private String  firstName;
     private String  lastName;
-    private Integer viewCount = 0;
-    private Integer replyCount = 0;
-    // to be discussed
+    private Integer viewCount;
+    private Integer replyCount;
 }
