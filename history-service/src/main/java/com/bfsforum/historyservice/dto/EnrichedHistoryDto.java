@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class EnrichedHistoryDto {
-    private UUID postId;
+    private String postId;
     private LocalDateTime viewedAt;
     private PostDto    post;
 }

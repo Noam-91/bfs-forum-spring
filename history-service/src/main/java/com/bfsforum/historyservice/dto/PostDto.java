@@ -11,7 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class PostDto {
-    private UUID postId;
+    private String postId;
     private String  title;
     private String  content;
     // to be discussed

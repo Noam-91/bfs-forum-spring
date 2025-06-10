@@ -9,4 +9,8 @@ import java.util.List;
 public class PostsEnrichmentResponse {
 //    private String requestId;
     private List<PostDto> posts;
+
+  public <E> PostsEnrichmentResponse(String string, List<E> pd) {
+      this.posts = (List<PostDto>) pd;
+  }
 }

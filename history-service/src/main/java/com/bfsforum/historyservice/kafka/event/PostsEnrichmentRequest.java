@@ -10,5 +10,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PostsEnrichmentRequest {
     private String         requestId;
-    private List<UUID> postIds;
+    private List<String> postIds;
 }

@@ -39,7 +39,7 @@ public class HistoryController {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
     })
     public ResponseEntity<Page<EnrichedHistoryDto>> getHistory(
-            @RequestHeader(name = "X-User-Id") UUID userId,
+            @RequestHeader(name = "X-User-Id") String userId,
             @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
@@ -71,7 +71,7 @@ public class HistoryController {
 })
     @GetMapping("/search")
     public ResponseEntity<?> search(
-            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(name = "date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,

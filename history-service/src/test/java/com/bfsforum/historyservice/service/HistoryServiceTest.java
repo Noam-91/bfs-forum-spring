@@ -13,14 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.kafka.requestreply.RequestReplyFuture;
-import org.springframework.util.concurrent.SettableListenableFuture;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,8 +41,8 @@ class HistoryServiceTest {
     @InjectMocks
     private HistoryService service;
 
-    private UUID userId;
-    private UUID postId;
+    private String userId;
+    private String postId;
     private History example;
     private LocalDateTime now;
 
@@ -92,7 +88,7 @@ class HistoryServiceTest {
                 .thenReturn(Optional.of(existing));
         when(repo.save(existing)).thenReturn(existing);
 
-        History result = service.recordView(userId, postId, now);
+        History result = service.recordView(userId, postId);
 
         assertSame(existing, result);
         assertEquals(now, existing.getViewedAt());
@@ -111,7 +107,7 @@ class HistoryServiceTest {
             return h;
         });
 
-        History result = service.recordView(userId, postId, now);
+        History result = service.recordView(userId, postId);
 
         assertNotNull(result.getHistoryId());
         assertEquals(userId, result.getUserId());

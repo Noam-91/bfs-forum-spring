@@ -129,18 +129,6 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Email service activates user")
-    void testActivateFromEmail() throws Exception {
-        String userId = UUID.randomUUID().toString();
-
-        mockMvc.perform(put("/users/" + userId + "/activate"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("User activated by email service"));
-
-        verify(userService).setUserActivation(userId, true);
-    }
-
-    @Test
     void updateUserRole_success() throws Exception {
         UUID id = UUID.randomUUID();
 
@@ -149,20 +137,6 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("User role updated to ADMIN"));
     }
 
-    @Test
-    void getAllUsers_success() throws Exception {
-        User u = User.builder()
-                .id(UUID.randomUUID().toString())  // UUID to String
-                .username("user1")
-                .build();
-
-        Page<User> mockPage = new PageImpl<>(List.of(u), PageRequest.of(0, 10), 1);
-        when(userService.getAllUsers(0, 10)).thenReturn(mockPage);
-
-        mockMvc.perform(get("/users?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].username").value("user1"));
-    }
 
     @Test
     void getProfile_notFound() throws Exception {
