@@ -1,13 +1,11 @@
 spring:
   application:
-    post-service
+    name: post-service
   profiles:
     active: dev
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb+srv://admin:5H5TUOlCTwjbcGKt@cluster0.4cdeyph.mongodb.net/postdb?retryWrites=true&w=majority}
-#      host: localhost   # local test
-#      port: 27017
       database: postdb
 
   kafka:
