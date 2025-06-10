@@ -116,7 +116,10 @@ public class HistoryService {
         // build lookup table for PostDto (key: postId, val: PostDto)
         Map<String, PostDto> postsById = repliedPosts
                 .stream()
-                .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().postId(p.getId()).title(p.getTitle()).content(p.getContent()).build()));
+                .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().content(p.getContent())
+                        .postId(p.getId()).title(p.getTitle())
+                        .firstName(p.getFirstName()).lastName(p.getLastName())
+                        .viewCount(p.getViewCount()).replyCount(p.getReplyCount()).build()));
         // transform raw history to enriched Dtos
         return raw.stream()
                 .filter(h-> postsById.containsKey(h.getPostId()))
@@ -151,7 +154,7 @@ public class HistoryService {
      * Fetch full enriched history then filter by keyword (in title or content)
      */
     public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
-        try {
+//        try {
             String lower = keyword.toLowerCase();
 //            HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
@@ -163,16 +166,16 @@ public class HistoryService {
                     .collect(Collectors.toList());
             return toPage(filtered,pageable);
 
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed for search by keyword: " + userId, ex);
-        }
+//        } catch (Exception ex) {
+//            throw new RuntimeException("Failed for search by keyword: " + userId, ex);
+//        }
     }
 
     /**
      * Filter cached enriched history by bonded startDate and endDate.
      */
     public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        try {
+//        try {
 //            HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
@@ -182,10 +185,10 @@ public class HistoryService {
                     })
                     .collect(Collectors.toList());
             return toPage(filtered, pageable);
-        } catch (Exception ex) {
-            throw new RuntimeException(
-                    String.format("Failed for date range search [%s – %s] for user %s",
-                            startDate, endDate, userId), ex);
-        }
+//        } catch (Exception ex) {
+//            throw new RuntimeException(
+//                    String.format("Failed for date range search [%s – %s] for user %s",
+//                            startDate, endDate, userId), ex);
+//        }
     }
 }

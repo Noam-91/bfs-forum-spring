@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
@@ -46,10 +46,31 @@ class HistoryControllerTest {
     @MockitoBean
     private HistoryService historyService;
 
+    @BeforeEach
+    void setUp() {
+        // stub default behavior for full history with empty page
+        Page<EnrichedHistoryDto> emptyPage = Page.empty();
+        when(historyService.getEnrichedHistory(anyString(), any(Pageable.class)))
+                .thenReturn(emptyPage);
+        when(historyService.searchByDate(anyString(), any(LocalDate.class), any(LocalDate.class), any(Pageable.class)))
+                .thenReturn(emptyPage);
+        when(historyService.searchByKeyword(anyString(), anyString(), any(Pageable.class)))
+                .thenReturn(emptyPage);
+    }
+
+
     private EnrichedHistoryDto sampleDto() {
         String postId = UUID.randomUUID().toString();
         LocalDateTime viewedAt = LocalDateTime.now();
-        PostDto post = new PostDto(postId, "Test Title", "Test Content");
+        PostDto post = PostDto.builder()
+                .postId("p1")
+                .title("Test Title")
+                .content("Test Content")
+                .firstName("Harry")
+                .lastName("Potter")
+                .viewCount(123)
+                .replyCount(45)
+                .build();
         return new EnrichedHistoryDto(postId, viewedAt, post);
     }
 
@@ -136,10 +157,56 @@ class HistoryControllerTest {
     }
 
     @Test
-    void search_invalidSingleDate_returnsBadRequest() throws Exception {
+    void search_noParams_returnsFullHistory() throws Exception {
+        mockMvc.perform(get("/history/search")
+                        .header("X-User-Id", "u2"))
+                .andExpect(status().isOk());
+        verify(historyService).getEnrichedHistory(eq("u2"), any(Pageable.class));
+    }
+    @Test
+    void search_keywordOnly_invokesKeywordSearch() throws Exception {
         mockMvc.perform(get("/history/search")
                         .header("X-User-Id", "u2")
-                        .param("date", LocalDate.now().toString()))
-                .andExpect(status().isBadRequest());
+                        .param("keyword", "foo"))
+                .andExpect(status().isOk());
+        verify(historyService).searchByKeyword(eq("u2"), eq("foo"), any(Pageable.class));
     }
+
+    @Test
+    void search_dateOnly_defaultsEndDateAndOk() throws Exception {
+        String start = LocalDate.of(2025, 6, 1).toString();
+
+        mockMvc.perform(get("/history/search")
+                        .header("X-User-Id", "u2")
+                        .param("date", start)             // ← use "date"
+                        .param("endDate", (String) null)  // make sure endDate is absent
+                )
+                .andExpect(status().isOk());
+
+        // lowerBound = start, upperBound = today
+        verify(historyService).searchByDate(
+                eq("u2"),
+                eq(LocalDate.parse(start)),
+                eq(LocalDate.now()),
+                any(Pageable.class)
+        );
+    }
+
+    @Test
+    void search_endDateOnly_defaultsStartDateAndOk() throws Exception {
+        String end = LocalDate.of(2025, 6, 5).toString();
+        mockMvc.perform(get("/history/search")
+                        .header("X-User-Id", "u2")
+                        .param("endDate", end))
+                .andExpect(status().isOk());
+        // lowerBound=1900-01-01, upperBound=end
+        verify(historyService).searchByDate(
+                eq("u2"),
+                eq(LocalDate.of(1900, 1, 1)),
+                eq(LocalDate.parse(end)),
+                any(Pageable.class)
+        );
+    }
+
+
 }

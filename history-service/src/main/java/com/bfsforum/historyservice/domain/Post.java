@@ -17,6 +17,10 @@ public class Post {
 
     private String userId;
 
+    private String firstName;
+
+    private String lastName;
+
     private String title;
 
 

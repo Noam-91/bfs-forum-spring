@@ -71,13 +71,22 @@ public class HistoryServiceCacheManualContextTest {
 
         // 8) Stub reply manager to return a completed future of Posts
         List<Post> posts = List.of(
-                new Post(
-                        "p1","user-1","T","C",
-                        false, PostStatus.UNPUBLISHED,
-                        LocalDateTime.now(), LocalDateTime.now(),
-                        List.of(), List.of(), List.of(),
-                        0, 0
-                )
+                Post.builder().id("p1")
+                .userId("test123")
+                .firstName("Harry")
+                .lastName("Potter")
+                .title("Test Title")
+                .content("Test Content")
+                .isArchived(false)
+                .status(PostStatus.PUBLISHED)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .images(List.of())
+                .attachments(List.of())
+                .postReplies(List.of())
+                .viewCount(0)
+                .replyCount(0)
+                .build()
         );
         CompletableFuture<List<Post>> fut = CompletableFuture.completedFuture(posts);
         when(requestReplyManager.createAndStoreFuture(anyString())).thenReturn(fut);
