@@ -35,9 +35,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class HistoryService {
-    // self injection of the spring proxy, otherwise cache will not work
-    @Autowired
-    private HistoryService self;
+//    // self injection of the spring proxy, otherwise cache will not work
+//    @Autowired
+//    private HistoryService self;
 
     private final HistoryRepo historyRepo;
     private final StreamBridge streamBridge;
@@ -145,8 +145,8 @@ public class HistoryService {
 
     public Page<EnrichedHistoryDto> getEnrichedHistory(
             String userId, Pageable pageable) {
-//        HistoryService proxy = (HistoryService) AopContext.currentProxy();
-        List<EnrichedHistoryDto> full = self.loadFullEnrichedHistory(userId);
+        HistoryService proxy = (HistoryService) AopContext.currentProxy();
+        List<EnrichedHistoryDto> full = proxy.loadFullEnrichedHistory(userId);
         return toPage(full, pageable);
 
     }
@@ -156,8 +156,8 @@ public class HistoryService {
     public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
 //        try {
             String lower = keyword.toLowerCase();
-//            HistoryService proxy = (HistoryService) AopContext.currentProxy();
-            List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
+            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
                         PostDto p = dto.getPost();
                         return (p.getTitle()   != null && p.getTitle().toLowerCase().contains(lower))
@@ -176,8 +176,8 @@ public class HistoryService {
      */
     public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
 //        try {
-//            HistoryService proxy = (HistoryService) AopContext.currentProxy();
-            List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
+            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
                         LocalDate viewed = dto.getViewedAt().toLocalDate();
                         return (!viewed.isBefore(startDate))
