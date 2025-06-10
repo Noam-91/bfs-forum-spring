@@ -96,21 +96,6 @@ public class HistoryService {
         streamBridge.send(requestBindingName, message);
         // c. wait for the future to complete with a timeout
         List<Post> repliedPosts = requestReplyManager.awaitFuture(correlationId, future);
-//        PostsEnrichmentRequest req =
-//                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
-//        ProducerRecord<String, PostsEnrichmentRequest> record =
-//                new ProducerRecord<>("posts-enrichment-request", req);
-//        PostsEnrichmentResponse resp;
-//        try {
-//            // send req and register for a reply
-//            RequestReplyFuture<String, PostsEnrichmentRequest, PostsEnrichmentResponse> future = kafka.sendAndReceive(record);
-//            // block up to 5s until reply arrives
-//            ConsumerRecord<String, PostsEnrichmentResponse> cr = future.get(5, TimeUnit.SECONDS);
-//            // extract the DTO from record
-//            resp = cr.value();
-//        } catch (Exception ex) {
-//            throw new RuntimeException("Failed for getting response from post-service: " + userId, ex);
-//        }
 
         // 3) merge into EnrichedHistoryDto
         // build lookup table for PostDto (key: postId, val: PostDto)

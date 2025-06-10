@@ -34,9 +34,6 @@ public class KafkaSingleConsumerConfig {
             Post post = message.getPayload();
             log.info("Received post notification for correlationId {}: {}", correlationId, post);
 
-            // Complete the future
-            singlePostManager.completeFuture(correlationId, post);
-
             // Persist the view record
             historyService.recordView(post.getUserId(), post.getId());
         };
