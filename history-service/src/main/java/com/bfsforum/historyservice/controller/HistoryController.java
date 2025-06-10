@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
-import java.util.UUID;
 @Tag(name = "History", description = "Operations related to user history retrieval and management")
 @RestController
 @RequestMapping("/history")
@@ -36,8 +36,7 @@ public class HistoryController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "History retrieved successfully", content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     public ResponseEntity<Page<EnrichedHistoryDto>> getHistory(
             @RequestHeader(name = "X-User-Id") String userId,
             @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
@@ -48,7 +47,7 @@ public class HistoryController {
         return ResponseEntity.ok(data);
 
     }
-//    // test controller for saving a String in db
+    //    // test controller for saving a String in db
 //    @PutMapping("/save")
 //    public ResponseEntity<?> saveHistory(
 //            @RequestParam("userId") String userId,
@@ -58,18 +57,21 @@ public class HistoryController {
 //        HistoryTest h = historyService.recordViewInString(userId, postId);
 //        return ResponseEntity.ok(h);
 //    }
-@Operation(
-        summary = "Search viewed history",
-        description = "Search viewed history by keyword or by a start–end date range for the authenticated user"
-)
-@ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Search results retrieved", content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "400", description = "Bad request if both keyword and date-range are provided, or if only one of startDate/endDate is supplied", content = @Content),
-        @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response during search", content = @Content),
-        @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content
-        )
-})
     @GetMapping("/search")
+    @Operation(
+            summary = "Search viewed history",
+            description = "Search viewed history by keyword or by a start–end date range for the authenticated user"
+                    + "If keyword is provided, date parameters are ignored. "
+                    + "If dates are provided, missing startDate defaults to 1900-01-01 and missing endDate defaults to today. "
+                    + "startDate must be on or before endDate. "
+                    + "If neither keyword nor dates are provided, returns full history."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Search results retrieved", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Bad request if both keyword and date-range are provided, or startDate after endDate is supplied", content = @Content),
+            @ApiResponse(responseCode = "504", description = "Timeout waiting for post-service response during search", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
+
     public ResponseEntity<?> search(
             @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) String keyword,
@@ -87,24 +89,41 @@ public class HistoryController {
                     "Please supply either a keyword or a date range, not both."
             );
         }
-        // 2. If user wants a date range, both bounds must be present
-        if ((startDate != null && endDate == null) || (startDate == null && endDate != null)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Please supply both startDate and endDate for a date range search."
-            );
-        }
+//        // 2. If user wants a date range, both bounds must be present
+//        if ((startDate != null && endDate == null) || (startDate == null && endDate != null)) {
+//            throw new ResponseStatusException(
+//                    HttpStatus.BAD_REQUEST,
+//                    "Please supply both startDate and endDate for a date range search."
+//            );
+//        }
         Page<EnrichedHistoryDto> page;
         if (keyword != null) {
+            // keyword search
             page = historyService.searchByKeyword(userId, keyword, pageable);
 
-        } else if (startDate != null) {
-            // both startDate and endDate are not null here
-            page = historyService.searchByDate(userId, startDate, endDate, pageable);
-
         } else {
-            // neither keyword nor dates supplied gives full history
-            page = historyService.getEnrichedHistory(userId, pageable);
+            // no param cases:
+            // default start date set to be 01/01/1900
+            LocalDate lowerBound = Optional.ofNullable(startDate).
+                    orElse(LocalDate.of(1900, 1, 1));
+            // default end date set to be today
+            LocalDate upperBound = Optional.ofNullable(endDate).orElse(LocalDate.now());
+
+            // check if start date is later than end date
+            if(lowerBound.isAfter(upperBound)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "startDate must be on or after endDate."
+                );
+            }
+
+            // if neither date provided, gives full history
+                if(startDate == null && endDate == null) {
+                    page = historyService.getEnrichedHistory(userId, pageable);
+                } else {
+                    page = historyService.searchByDate(userId, lowerBound, upperBound, pageable);
+                }
+
         }
 
         return ResponseEntity.ok(page);
