@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.*;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -22,10 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 @Service
 @Slf4j
@@ -61,6 +65,7 @@ public class UserService {
 
         // 1. 构建并保存用户
         User user = User.builder()
+                .id(UUID.randomUUID().toString())
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .isActive(false)
@@ -68,17 +73,18 @@ public class UserService {
                 .build();
 
         UserProfile profile = UserProfile.builder()
+                .id(UUID.randomUUID().toString())
                 .isActive(true)
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
-                .createdAt(LocalDateTime.now())
+                .createdAt(Instant.now())
                 .imgUrl(dto.getImgUrl())
                 .user(user)
                 .build();
 
         user.setProfile(profile);
 
-        User saved = userRepository.save(user); // 保存后得到 UUID
+        User saved = userRepository.save(user); // 保存后得到 string
 
         // 2. 构建 Kafka dto（不含 password）
         UserRegisterRequest message = UserRegisterRequest.builder()
@@ -110,9 +116,11 @@ public class UserService {
         log.info("Send token verification request：correlationId={}, token={}", correlationId, token);
         streamBridge.send(tokenVerifyBinding, message);
 
-        return requestReplyManager.awaitFuture(correlationId, future, 86400);
+        return requestReplyManager.awaitFuture(correlationId, future);
     }
 
+    @Value("${bfs-forum.kafka.user-info-reply-binding-name}")
+    private String userInfoReplyBinding;
 
     /**
      * Retrieves a user by username.
@@ -130,7 +138,7 @@ public class UserService {
      * @param id The user's UUID.
      * @return Optional containing the User if found.
      */
-    public Optional<User> findById(UUID id) {
+    public Optional<User> findById(String id) {
         return userRepository.findById(id);
     }
 
@@ -154,7 +162,7 @@ public class UserService {
      * @throws UserNotFoundException         if user not found.
      * @throws UserProfileNotFoundException if user profile not found.
      */
-    public void updateProfile(UUID userId, UserProfileDto dto)
+    public void updateProfile(String userId, UserProfileDto dto)
             throws UserNotFoundException, UserProfileNotFoundException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
@@ -178,7 +186,7 @@ public class UserService {
      * @param newRole The new role to assign.
      * @throws UserNotFoundException if user not found.
      */
-    public void updateUserRole(UUID userId, Role newRole) throws UserNotFoundException {
+    public void updateUserRole(String userId, Role newRole) throws UserNotFoundException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         user.setRole(newRole);
@@ -191,7 +199,7 @@ public class UserService {
      * @param userId The user's UUID.
      * @throws UserNotFoundException if user not found.
      */
-    public void setUserActivation(UUID userId, boolean isActive) throws UserNotFoundException {
+    public void setUserActivation(String userId, boolean isActive) throws UserNotFoundException {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         user.setActive(isActive);
@@ -206,8 +214,8 @@ public class UserService {
      * @param expiresAt the expiration time of the token
      * @throws RuntimeException if token is expired or user not found
      */
-    public void activateVerifiedUser(UUID userId, LocalDateTime expiresAt) {
-        if (expiresAt.isBefore(LocalDateTime.now())) {
+    public void activateVerifiedUser(String userId, Instant expiresAt) {
+        if (expiresAt.isBefore(Instant.now())) {
             throw new RuntimeException("Token has expired");
         }
 

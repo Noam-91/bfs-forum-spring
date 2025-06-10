@@ -21,8 +21,8 @@ import java.util.UUID;
 @Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
-  @Schema(type = "UUID", format = "uuid")
-  private UUID id;
+  @Schema(type = "string", format = "uuid")
+  private String id;
 
   @Schema(type = "string", description = "Email", example = "ny@bfs.com")
   private String username;

@@ -17,23 +17,39 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
   cloud:
+    function:
+      definition: emailVerificationReplyConsumer;userInfoReplyConsumer
     stream:
-      function:
-        definition: emailVerificationReplyConsumer
       bindings:
+        userRegister-out-0:
+          destination: register-notification
+          group: user-service
+
         tokenVerify-out-0:
-          destination: token-verify-request
+          destination: verification-request
+          group: user-service
+
         emailVerificationReplyConsumer-in-0:
-          destination: token-verify-reply
+          destination: verification-response
+          group: user-service
+
+        userInfoRequest-in-0:
+          destination: user-info-request
+          group: user-service
+
+        userInfoReplyConsumer-out-0:
+          destination: user-info-response
+          group: user-service
 
   kafka:
     bootstrap-servers: localhost:9092
 
+bfs-forum:
+  kafka:
+    user-register-binding-name: userRegister-out-0
+    token-verify-binding-name: tokenVerify-out-0
+    user-info-reply-binding-name: userInfoReplyConsumer-out-0
+
 eureka:
   client:
     enabled: false
-
-bfs-forum:
-  kafka:
-    user-register-binding-name: tokenVerify-out-0
-    token-verify-binding-name: tokenVerify-out-0

@@ -27,6 +27,4 @@ public class UserRegisterMessage {
 
     @NotBlank(message = "Image URL is required")
     private String imgUrl;
-
-
 }
