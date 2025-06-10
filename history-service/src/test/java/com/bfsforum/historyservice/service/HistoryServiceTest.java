@@ -1,134 +1,170 @@
 package com.bfsforum.historyservice.service;
 
 import com.bfsforum.historyservice.domain.History;
-import com.bfsforum.historyservice.domain.Post;
 import com.bfsforum.historyservice.dto.EnrichedHistoryDto;
 import com.bfsforum.historyservice.dto.PostDto;
+import com.bfsforum.historyservice.kafka.event.PostsEnrichmentRequest;
+import com.bfsforum.historyservice.kafka.event.PostsEnrichmentResponse;
 import com.bfsforum.historyservice.repository.HistoryRepo;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.data.domain.*;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.junit.jupiter.api.Test;
+import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
+import org.springframework.kafka.requestreply.RequestReplyFuture;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class HistoryServiceTest {
 
-    @Mock HistoryRepo historyRepo;
-    @Mock StreamBridge streamBridge;
-    @Mock @Qualifier("postListManager")
-    RequestReplyManager<List<Post>> requestReplyManager;
-
-    @InjectMocks HistoryService historyService;
-
-    private final String USER = "user-1";
-    private final String POST_A = "post-A";
-    private final LocalDateTime NOW = LocalDateTime.of(2025,6,9,12,0);
+    @Mock
+    private HistoryRepo repo;
+    @Mock
+    ReplyingKafkaTemplate<String, PostsEnrichmentRequest, PostsEnrichmentResponse> kafka;
 
 
-    @Test
-    void recordView_updatesExisting() {
-        LocalDateTime originalTime = LocalDateTime.of(2025,1,1,0,0);
-        History existing = History.builder()
-                .userId(USER)
-                .postId(POST_A)
-                .viewedAt(originalTime)
-                .build();
-        when(historyRepo.findByUserIdAndPostId(USER, POST_A))
-                .thenReturn(Optional.of(existing));
-        when(historyRepo.save(existing)).thenAnswer(inv -> inv.getArgument(0));
+    @InjectMocks
+    private HistoryService service;
 
-        History result = historyService.recordView(USER, POST_A);
-        // compare to the original timestamp, not the mutated one
-        assertThat(result.getViewedAt()).isAfter(originalTime);
-        verify(historyRepo).save(existing);
+    private String userId;
+    private String postId;
+    private History example;
+    private LocalDateTime now;
+
+    @BeforeEach
+    void setUp() {
+        userId = UUID.randomUUID().toString();
+        postId = UUID.randomUUID().toString();
+        now = LocalDateTime.now();
+        example = new History(userId, postId, now.minusDays(1));
     }
 
     @Test
-    void recordView_createsNew_whenNoExisting() {
-        when(historyRepo.findByUserIdAndPostId(USER, POST_A))
+    void getByUserAndPost_found() {
+        when(repo.findByUserIdAndPostId(userId, postId))
+                .thenReturn(Optional.of(example));
+
+        Optional<History> result = service.getByUserAndPost(userId, postId);
+
+        assertThat(result).isPresent()
+                .contains(example);
+        verify(repo).findByUserIdAndPostId(userId, postId);
+        verifyNoMoreInteractions(repo);
+    }
+
+    @Test
+    void getByUserAndPost_notFound() {
+        when(repo.findByUserIdAndPostId(userId, postId))
                 .thenReturn(Optional.empty());
-        ArgumentCaptor<History> captor = ArgumentCaptor.forClass(History.class);
 
-        History saved = History.builder()
-                .userId(USER)
-                .postId(POST_A)
-                .viewedAt(NOW)
-                .build();
-        when(historyRepo.save(any())).thenReturn(saved);
+        Optional<History> result = service.getByUserAndPost(userId, postId);
 
-        History result = historyService.recordView(USER, POST_A);
+        assertThat(result).isEmpty();
+        verify(repo).findByUserIdAndPostId(userId, postId);
+        verifyNoMoreInteractions(repo);
+    }
 
-        verify(historyRepo).save(captor.capture());
-        History toSave = captor.getValue();
-        assertThat(toSave.getUserId()).isEqualTo(USER);
-        assertThat(toSave.getPostId()).isEqualTo(POST_A);
-        assertThat(result).isSameAs(saved);
+
+    @Test
+    void recordView_existingHistory_updatesTimestamp() {
+        History existing = new History(UUID.randomUUID().toString(), userId, postId, now.minusDays(5));
+
+        when(repo.findByUserIdAndPostId(userId, postId))
+                .thenReturn(Optional.of(existing));
+        when(repo.save(existing)).thenReturn(existing);
+
+        History result = service.recordView(userId, postId);
+
+        assertSame(existing, result);
+        assertEquals(now, existing.getViewedAt());
+        verify(repo).findByUserIdAndPostId(userId, postId);
+        verify(repo).save(existing);
+        verifyNoMoreInteractions(repo);
     }
 
     @Test
-    void loadFullEnrichedHistory_returnsEmpty_whenNoHistory() {
-        when(historyRepo.findByUserIdOrderByViewedAtDesc(USER))
-                .thenReturn(Collections.emptyList());
+    void recordView_noHistory_createsAndSavesNew() {
+        when(repo.findByUserIdAndPostId(userId, postId))
+                .thenReturn(Optional.empty());
+        when(repo.save(any(History.class))).thenAnswer(invocation -> {
+            History h = invocation.getArgument(0);
+            h.setHistoryId(UUID.randomUUID().toString());   // <— assign ID
+            return h;
+        });
 
-        List<EnrichedHistoryDto> output = historyService.loadFullEnrichedHistory(USER);
-        assertThat(output).isEmpty();
-        verify(requestReplyManager, never()).awaitFuture(any(), any());
+        History result = service.recordView(userId, postId);
+
+        assertNotNull(result.getHistoryId());
+        assertEquals(userId, result.getUserId());
+        assertEquals(postId, result.getPostId());
+        assertEquals(now, result.getViewedAt());
+        verify(repo).findByUserIdAndPostId(userId, postId);
+        verify(repo).save(any(History.class));
+        verifyNoMoreInteractions(repo);
     }
-
     @Test
-    void loadFullEnrichedHistory_mergesPostsCorrectly() throws Exception {
-        // 1) stub history repo
-        History h1 = History.builder().userId(USER).postId("p1")
-                .viewedAt(LocalDateTime.of(2025,6,8,10,0)).build();
-        History h2 = History.builder().userId(USER).postId("p2")
-                .viewedAt(LocalDateTime.of(2025,6,9,11,0)).build();
-        when(historyRepo.findByUserIdOrderByViewedAtDesc(USER))
-                .thenReturn(List.of(h2, h1));
+    void getEnrichedHistory_shouldReturnEnrichedAndBeCached() throws Exception {
+        // --- arrange ----------------------------------------------------
+        String userId = "user-123";
+        String postId1 = "post-A";
+        LocalDateTime ts1 = LocalDateTime.of(2025, 6, 7, 12, 0);
 
-        // 2) stub requestReplyManager
-        CompletableFuture<List<Post>> future = new CompletableFuture<>();
-        when(requestReplyManager.createAndStoreFuture(any()))
-                .thenReturn(future);
-        List<Post> posts = List.of(
-                Post.builder()
-                        .id("p1")
-                        .title("Title1")
-                        .content("Body1")
-                        .build(),
-                Post.builder()
-                        .id("p2")
-                        .title("Title2")
-                        .content("Body2")
-                        .build()
+        // stub repository
+        History h1 = new History(userId, postId1, ts1);
+        when(repo.findByUserIdOrderByViewedAtDesc(userId))
+                .thenReturn(List.of(h1));
+
+        // prepare fake enrichment response
+        PostDto pd = new PostDto(postId1, "Title A", "Body A");
+        PostsEnrichmentResponse response =
+                new PostsEnrichmentResponse(UUID.randomUUID().toString(), List.of(pd));
+        ConsumerRecord<String, PostsEnrichmentResponse> cr =
+                new ConsumerRecord<>("posts-enrichment-request", 0, 0L, null, response);
+
+        @SuppressWarnings("unchecked")
+        RequestReplyFuture<String, PostsEnrichmentRequest, PostsEnrichmentResponse> rrFuture =
+                mock(RequestReplyFuture.class);
+
+        when(rrFuture.get(5, TimeUnit.SECONDS)).thenReturn(cr);
+
+        // <<< DISAMBIGUATE to the ProducerRecord overload >>>
+        when(kafka.sendAndReceive(
+                ArgumentMatchers.<ProducerRecord<String, PostsEnrichmentRequest>>any()
+        )).thenReturn(rrFuture);
+
+        // --- act & assert first call ------------------------------------
+        List<EnrichedHistoryDto> first = service.loadFullEnrichedHistory(userId);
+        assertThat(first).hasSize(1);
+        assertThat(first.get(0).getPost()).isEqualTo(pd);
+
+        verify(repo, times(1)).findByUserIdOrderByViewedAtDesc(userId);
+        verify(kafka, times(1)).sendAndReceive(
+                ArgumentMatchers.<ProducerRecord<String, PostsEnrichmentRequest>>any()
         );
-        // simulate async reply
-        future.complete(posts);
-        when(requestReplyManager.awaitFuture(any(), eq(future)))
-                .thenReturn(posts);
 
-        List<EnrichedHistoryDto> enriched = historyService.loadFullEnrichedHistory(USER);
+        // --- act & assert second call (cached) -------------------------
+        List<EnrichedHistoryDto> second = service.loadFullEnrichedHistory(userId);
+        assertThat(second).isEqualTo(first);  // identical instance
 
-        assertThat(enriched)
-                .hasSize(2)
-                .extracting(EnrichedHistoryDto::getPostId)
-                .containsExactly("p2","p1");
-        assertThat(enriched.get(0).getPost().getTitle()).isEqualTo("Title2");
+        // still only one repo + kafka call in total
+        verify(repo, times(1)).findByUserIdOrderByViewedAtDesc(userId);
+        verify(kafka, times(1)).sendAndReceive(
+                ArgumentMatchers.<ProducerRecord<String, PostsEnrichmentRequest>>any()
+        );
     }
-
-
 }

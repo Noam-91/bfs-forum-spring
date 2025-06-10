@@ -60,6 +60,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <!--mysql-->
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${mysql.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -124,7 +130,7 @@
         <module>history-service</module>
         <module>post-service</module>
         <module>message-service</module>
-        <module>file-service</module>
+
         <module>email-service</module>
     </modules>
 

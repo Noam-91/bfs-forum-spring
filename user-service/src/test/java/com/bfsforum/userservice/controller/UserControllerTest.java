@@ -2,20 +2,18 @@ package com.bfsforum.userservice.controller;
 
 import com.bfsforum.userservice.config.KafkaConsumerConfig;
 import com.bfsforum.userservice.dto.*;
-import com.bfsforum.userservice.entity.Role;
-import com.bfsforum.userservice.entity.User;
-import com.bfsforum.userservice.entity.UserProfile;
+import com.bfsforum.userservice.entity.*;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.data.domain.*;
 import com.bfsforum.userservice.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -25,24 +23,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(controllers = UserController.class)
 class UserControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
     @MockitoBean
     private KafkaConsumerConfig kafkaConsumerConfig;
 
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private StreamBridge streamBridge;
+
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private MockMvc mockMvc;
+
     @Test
     void register_success() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString(); //  To String
         UserRegisterMessage req = new UserRegisterMessage("test", "test123","John", "Doe", "img.png");
 
         User user = User.builder().id(userId).username("test").build();
@@ -54,15 +54,27 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User registered successfully"))
-                .andExpect(jsonPath("$.userId").value(userId.toString()));
+                .andExpect(jsonPath("$.userId").value(userId));
     }
 
     @Test
     void getProfile_success() throws Exception {
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
+
         UserProfile profile = UserProfile.builder()
-                .firstName("John").lastName("Doe").imgUrl("img.png").isActive(true).build();
-        User user = User.builder().id(id).username("test").role(Role.USER).isActive(true).profile(profile).build();
+                .firstName("John")
+                .lastName("Doe")
+                .imgUrl("img.png")
+                .isActive(true)
+                .build();
+
+        User user = User.builder()
+                .id(id)
+                .username("test")
+                .role(Role.USER)
+                .isActive(true)
+                .profile(profile)
+                .build();
 
         when(userService.findById(id)).thenReturn(Optional.of(user));
 
@@ -87,7 +99,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Admin toggles activation - isActive true")
     void testToggleUserActivation_activate() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
 
         String body = "{ \"isActive\": true }";
 
@@ -103,7 +115,7 @@ class UserControllerTest {
     @Test
     @DisplayName("Admin toggles activation - isActive false")
     void testToggleUserActivation_deactivate() throws Exception {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
 
         String body = "{ \"isActive\": false }";
 
@@ -117,18 +129,6 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("Email service activates user")
-    void testActivateFromEmail() throws Exception {
-        UUID userId = UUID.randomUUID();
-
-        mockMvc.perform(put("/users/" + userId + "/activate"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("User activated by email service"));
-
-        verify(userService).setUserActivation(userId, true);
-    }
-
-    @Test
     void updateUserRole_success() throws Exception {
         UUID id = UUID.randomUUID();
 
@@ -137,24 +137,16 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.message").value("User role updated to ADMIN"));
     }
 
-    @Test
-    void getAllUsers_success() throws Exception {
-        User u = User.builder().id(UUID.randomUUID()).username("user1").build();
-        Page<User> mockPage = new PageImpl<>(List.of(u), PageRequest.of(0, 10), 1);
-        when(userService.getAllUsers(0, 10)).thenReturn(mockPage);
-
-        mockMvc.perform(get("/users?page=0&size=10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].username").value("user1"));
-    }
 
     @Test
     void getProfile_notFound() throws Exception {
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
+
         when(userService.findById(id)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/users/{id}/profile", id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
+
 }

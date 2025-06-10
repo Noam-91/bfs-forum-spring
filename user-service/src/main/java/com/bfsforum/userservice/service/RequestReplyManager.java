@@ -79,4 +79,11 @@ public class RequestReplyManager<T> {
             pendingRequests.remove(correlationId); // Clean up the map
         }
     }
+
+    public void completeFutureExceptionally(String correlationId, Throwable ex) {
+        CompletableFuture<T> future = pendingRequests.remove(correlationId);
+        if (future != null) {
+            future.completeExceptionally(ex);
+        }
+    }
 }

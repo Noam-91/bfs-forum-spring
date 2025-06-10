@@ -19,7 +19,23 @@ spring:
         - id: auth-service
           uri: lb://auth-service
           predicates:
-            - Path=/auth/**
+            - Path=/auth/**, /auth
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/posts/**, /posts
+        - id: history-service
+          uri: lb://history-service
+          predicates:
+            - Path=/history/**, /history
+        - id: message-service
+          uri: lb://message-service
+          predicates:
+            - Path=/messages/**, /messages
 
   # Spring Security OAuth2 Resource Server Configuration for JWT
   security:
@@ -27,4 +43,4 @@ spring:
       resourceserver:
         jwt:
           # Configure the JWK Set URI where the public keys are exposed by the JWT issuer
-          jwk-set-uri: http://localhost:8081/oauth2/jwks
+          jwk-set-uri: http://localhost:3939/oauth2/jwks

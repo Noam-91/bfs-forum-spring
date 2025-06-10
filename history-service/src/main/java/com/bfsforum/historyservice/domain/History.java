@@ -30,4 +30,9 @@ public class History {
     @Column(name = "viewed_at", nullable = false, updatable = false)
     private LocalDateTime viewedAt;
 
+    public History(String userId, String postId, LocalDateTime localDateTime) {
+        this.userId = userId;
+        this.postId = postId;
+        this.viewedAt = localDateTime;
+    }
 }

@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -28,9 +29,9 @@ public class JwtCookieFilter implements WebFilter {
 
     // Define the paths to exclude from cookie validation
     private final List<String> excludedPaths = Arrays.asList(
-            "/auth/**",
+            "/auth/*",
             "/user/register",
-            "/eureka/**"
+            "/messages"
     );
     private final PathPatternParser pathPatternParser = new PathPatternParser();
 
@@ -41,7 +42,10 @@ public class JwtCookieFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         // Check if the request path is in the excluded list
-        boolean isExcluded = excludedPaths.stream()
+        ServerHttpRequest request = exchange.getRequest();
+        HttpMethod requestMethod = request.getMethod();
+        boolean isExcluded = (requestMethod == HttpMethod.POST) &&
+            excludedPaths.stream()
                 .anyMatch(pattern -> pathPatternParser.parse(pattern).matches(exchange.getRequest().getPath()));
         if (isExcluded) {
             return chain.filter(exchange);
@@ -67,7 +71,6 @@ public class JwtCookieFilter implements WebFilter {
                 })
                 .onErrorResume(ex -> {
                     System.err.println("JWT Decoding or Validation Failed: " + ex.getMessage());
-
                     return Mono.error(new BadCredentialsException("Invalid or expired JWT token", ex));
                 });
     }

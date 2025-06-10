@@ -1,5 +1,6 @@
 package com.bfsforum.authservice.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Entity
 @AllArgsConstructor
@@ -18,7 +21,6 @@ import lombok.NoArgsConstructor;
 @Schema(name = "User", description = "Represents a user in the system", title = "User")
 public class User {
   @Id
-  @GeneratedValue(generator = "UUID")
   @Schema(type = "string", format = "uuid")
   private String id;
 
@@ -26,6 +28,7 @@ public class User {
   private String username;
 
   @Schema(type = "string")
+  @JsonIgnore
   private String password;
 
   @Schema(type = "string", description = "Role", example = "UNVERIFIED, USER, ADMIN, SUPER_ADMIN")

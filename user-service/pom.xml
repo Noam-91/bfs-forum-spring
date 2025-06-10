@@ -166,7 +166,7 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <!-- ✅ Set this so surefire knows where to get the agent config -->
+                            <!-- Set this so surefire knows where to get the agent config -->
                             <propertyName>argLine</propertyName>
                             <destFile>${project.build.directory}/jacoco.exec</destFile>
                         </configuration>

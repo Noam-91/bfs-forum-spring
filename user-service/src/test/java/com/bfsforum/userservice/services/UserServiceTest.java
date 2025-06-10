@@ -1,12 +1,15 @@
 package com.bfsforum.userservice.services;
 
+import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserProfileDto;
 import com.bfsforum.userservice.dto.UserRegisterMessage;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.entity.UserProfile;
+import com.bfsforum.userservice.exceptions.UserAlreadyExistsException;
 import com.bfsforum.userservice.repository.UserProfileRepository;
 import com.bfsforum.userservice.repository.UserRepository;
+import com.bfsforum.userservice.service.RequestReplyManager;
 import com.bfsforum.userservice.service.UserService;
 
 import org.junit.jupiter.api.DisplayName;
@@ -14,31 +17,35 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
-
-    @Mock
-    private StreamBridge streamBridge;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private UserProfileRepository userProfileRepository;
-
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private StreamBridge streamBridge;
+    @Mock
+    private RequestReplyManager<EmailVerificationReply> requestReplyManager;
 
     @InjectMocks
     private UserService userService;
@@ -51,6 +58,14 @@ class UserServiceTest {
         assertTrue(result);
         verify(userRepository).existsByUsername("zhijun");
     }
+    @Test
+    @DisplayName("Should return true if username exists")
+    void testUsernameExists_returnsFalse() {
+        when(userRepository.existsByUsername("zhijun")).thenReturn(false);
+        boolean result = userService.usernameExists("zhijun");
+        assertFalse(result);
+        verify(userRepository).existsByUsername("zhijun");
+    }
 
     @Test
     void testRegister_success() throws Exception {
@@ -60,11 +75,10 @@ class UserServiceTest {
         when(passwordEncoder.encode("test123")).thenReturn("hashedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
-            user.setId(UUID.randomUUID());
+            user.setId(UUID.randomUUID().toString());
             return user;
         });
 
-        // 👇 用反射注入 @Value 字段（解决 bindingName 为 null 问题）
         Field field = UserService.class.getDeclaredField("userRegisterBinding");
         field.setAccessible(true);
         field.set(userService, "mock-binding");
@@ -78,9 +92,24 @@ class UserServiceTest {
     }
 
     @Test
+    void testRegister_usernameAlreadyExists() {
+        // Arrange
+        UserRegisterMessage dto = new UserRegisterMessage("existingUser", "test123", "admin", "admin", "default.png");
+
+        when(userRepository.existsByUsername("existingUser")).thenReturn(true);
+
+        assertThrows(UserAlreadyExistsException.class, () -> {
+            userService.register(dto);
+        });
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(streamBridge, never()).send(any(), any());
+    }
+
+    @Test
     @DisplayName("Should return user if found by ID")
     void testFindById_userExists() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         User user = User.builder().id(userId).username("zhijun").build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -94,7 +123,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should return empty if user not found by ID")
     void testFindById_userNotFound() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         Optional<User> result = userService.findById(userId);
@@ -105,7 +134,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should update user profile successfully")
     void testUpdateProfile_success() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         User user = User.builder()
                 .id(userId)
                 .profile(UserProfile.builder().firstName("Old").build())
@@ -126,7 +155,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should update user role successfully")
     void testUpdateUserRole_success() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         User user = User.builder().id(userId).role(Role.USER).build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -140,7 +169,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should activate user successfully")
     void testSetUserActivation_activate() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         User user = User.builder().id(userId).isActive(false).build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -154,7 +183,7 @@ class UserServiceTest {
     @Test
     @DisplayName("Should deactivate user successfully")
     void testSetUserActivation_deactivate() {
-        UUID userId = UUID.randomUUID();
+        String userId = UUID.randomUUID().toString();
         User user = User.builder().id(userId).isActive(true).build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -163,5 +192,17 @@ class UserServiceTest {
 
         assertFalse(user.isActive());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("Should return user by username")
+    void testFindByUsername_success() {
+        User user = User.builder().id("123").username("zhijun").build();
+        when(userRepository.findByUsername("zhijun")).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.findByUsername("zhijun");
+
+        assertTrue(result.isPresent());
+        assertEquals("zhijun", result.get().getUsername());
     }
 }

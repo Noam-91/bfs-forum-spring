@@ -6,7 +6,7 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: H7z0j41996
+    password: mysql
 
   jpa:
     hibernate:
@@ -17,23 +17,42 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
 
   cloud:
+    function:
+      definition: emailVerificationReplyConsumer; userInfoReplyConsumer; userInfoRequestConsumer
     stream:
-      function:
-        definition: emailVerificationReplyConsumer
       bindings:
+        userRegister-out-0:
+          destination: register-notification
+
         tokenVerify-out-0:
-          destination: token-verify-request
+          destination: verification-request
+
         emailVerificationReplyConsumer-in-0:
-          destination: token-verify-reply
+          destination: verification-response
+
+        userInfoRequestConsumer-in-0:
+          destination: user-info-request
+
+        userInfoReply-out-0:
+          destination: user-info-response
+
+        # demo purpose
+        userInfoRequest-out-0:
+          destination: user-info-request
 
   kafka:
     bootstrap-servers: localhost:9092
 
-eureka:
-  client:
-    enabled: false
-
 bfs-forum:
   kafka:
-    user-register-binding-name: tokenVerify-out-0
+    user-register-binding-name: userRegister-out-0
     token-verify-binding-name: tokenVerify-out-0
+    user-info-reply-binding-name: userInfoReply-out-0
+
+server:
+  port: 0
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/

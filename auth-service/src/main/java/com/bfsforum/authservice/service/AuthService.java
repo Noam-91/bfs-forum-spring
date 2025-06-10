@@ -66,4 +66,16 @@ public class AuthService {
 
     return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
   }
+
+  /** Find user by id
+   * @param userId
+   * @return User
+   */
+  public User findUserById(String userId){
+    Optional<User> userOptional = authDao.findById(userId);
+    if(userOptional.isEmpty()){
+      throw new RuntimeException("User not found");
+    }
+    return userOptional.get();
+  }
 }

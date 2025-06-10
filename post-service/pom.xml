@@ -3,58 +3,46 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <groupId>com.beaconfire</groupId>
+        <artifactId>BFS-Forum</artifactId>
+        <version>1.0</version>
     </parent>
     <groupId>com.bfsforum</groupId>
     <artifactId>post-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>post-service</name>
     <description>post-service</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
     <properties>
-        <java.version>1.8</java.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <java.version>17</java.version>
     </properties>
     <dependencies>
-        <!--mongodb-->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>java-dotenv</artifactId>
+            <version>5.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <!--mongoDB-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
         <!--validation-->
         <dependency>
@@ -76,34 +64,33 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
-        <!--doten-->
+        <!--swagger-->
         <dependency>
-            <groupId>io.github.cdimascio</groupId>
-            <artifactId>java-dotenv</artifactId>
-            <version>5.2.2</version>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
-        <!--Kafka-->
+        <!--actuator-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!--stream-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream</artifactId>
+        </dependency>
+        <!--kafka-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+        </dependency>
+        <!--kafka-->
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
-        <!--Jackson for JSON serialization-->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
+
     </dependencies>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <plugins>
@@ -131,6 +118,49 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- Jacoco -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.10</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+<!--            &lt;!&ndash; queryDSL&ndash;&gt;-->
+<!--            <plugin>-->
+<!--                <groupId>com.mysema.maven</groupId>-->
+<!--                <artifactId>apt-maven-plugin</artifactId>-->
+<!--                <version>1.1.3</version> <executions>-->
+<!--                <execution>-->
+<!--                    <goals>-->
+<!--                        <goal>process</goal>-->
+<!--                    </goals>-->
+<!--                    <configuration>-->
+<!--                        <outputDirectory>target/generated-sources/java</outputDirectory>-->
+<!--                        <processor>org.springframework.data.mongodb.repository.support.MongoAnnotationProcessor</processor>-->
+<!--                    </configuration>-->
+<!--                </execution>-->
+<!--            </executions>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>com.querydsl</groupId>-->
+<!--                        <artifactId>querydsl-apt</artifactId>-->
+<!--                        <version>${querydsl.version}</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

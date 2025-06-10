@@ -17,7 +17,7 @@ public class OpenApiConfig { // Renamed from SwaggerConfig for clarity
             .version("1.0")           // Your API version
             .description("API documentation for the Auth Service.")
             .contact(new Contact()
-                .name("Your Name/Team")
-                .email("your.email@example.com")));
+                .name("Noam")
+                .email("noamY@example.com")));
   }
 }

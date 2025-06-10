@@ -1,18 +1,24 @@
 package com.bfsforum.postservice.controller;
 
+import com.bfsforum.postservice.config.KafkaConsumerConfig;
 import com.bfsforum.postservice.domain.Post;
-import com.bfsforum.postservice.domain.PostStatus;
+import com.bfsforum.postservice.exception.ErrorResponse;
 import com.bfsforum.postservice.service.PostService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 /**
  * @author luluxue
@@ -21,174 +27,176 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/posts")
-@CrossOrigin(origins = "*")
+@Slf4j
+@Tag(name = "Post", description = "Post API")
 public class PostController {
-	@Autowired
-	private PostService postService;
-	
+	private final PostService postService;
+	public PostController(PostService postService) {
+		this.postService = postService;
+	}
+
 	@GetMapping
-	public ResponseEntity<Page<Post>> getAllPosts(
+	@Operation(summary = "Get posts by query parameters", description = "status, search, userId")
+	@ApiResponse(responseCode = "200", description = "Posts retrieved",
+			content = @Content(mediaType = "application/json",
+					array = @ArraySchema(schema = @Schema(implementation = Post.class))))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+		content = @Content(mediaType = "application/json",
+			schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Page<Post>> getQueriedPosts(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "10") int size,
 			@RequestParam(defaultValue = "createdAt") String sortBy,
 			@RequestParam(defaultValue = "desc") String sortDir,
-			@RequestParam(required = false) String status) {
-		
-		Page<Post> posts;
-		if (status != null && !status.isEmpty()) {
-			PostStatus postStatus = PostStatus.valueOf(status.toUpperCase());
-			posts = postService.getPostsByStatus(postStatus, page, size);
-		} else {
-			posts = postService.getAllPosts(page, size, sortBy, sortDir);
-		}
-		
+			@RequestParam(required = false) String status,
+			@RequestParam(required = false) String keyword,
+			@RequestParam(required = false) String searchIn,
+			@RequestParam(required = false) String userId,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String viewerId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String viewerRole) {
+
+			Page<Post> posts = postService.getQueriedPosts(page, size, sortBy, sortDir,
+					status, keyword, searchIn, userId, viewerId, viewerRole);
 		return ResponseEntity.ok(posts);
 	}
-	
-	@GetMapping("/published")
-	public ResponseEntity<Page<Post>> getPublishedPosts(
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(defaultValue = "createdAt") String sortBy,
-			@RequestParam(defaultValue = "desc") String sortDir) {
-		
-		Page<Post> posts = postService.getPublishedPosts(page, size, sortBy, sortDir);
-		
-		return ResponseEntity.ok(posts);
-	}
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<Post> getPostById(@PathVariable String id) {
-		Optional<Post> post = postService.getPostById(id);
-		if (post.isPresent()) {
-			// increase view counts
-			postService.incrementViewCount(id);
-			return ResponseEntity.ok(post.get());
-		} else {
-			return ResponseEntity.notFound().build();
-		}
-	}
-	
+
 	@PostMapping
-	public ResponseEntity<Post> createPost(@Valid @RequestBody Post post) {
-		Post createdPost = postService.createPost(post);
+	@Operation(summary = "Create post", description = "Create a new post")
+	@ApiResponse(responseCode = "201", description = "Post created",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> createPost(
+			@Valid @RequestBody Post post,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String creatorRole,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String creatorId) {
+
+		Post createdPost = postService.createPost(post, creatorId, creatorRole);
 		return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
 	}
-	
-	@PutMapping("/{id}")
-	public ResponseEntity<Post> updatePost(@PathVariable String id, @Valid @RequestBody Post post) {
-		try {
-			Post updatedPost = postService.updatePost(id, post);
-			return ResponseEntity.ok(updatedPost);
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
+
+	@GetMapping("/{postId}")
+	@Operation(summary = "Get post by id", description = "Get a post by id")
+	@ApiResponse(responseCode = "200", description = "Post retrieved",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Not Found",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> getPostById(
+			@PathVariable String postId,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userId) {
+
+		Post post = postService.getPostById(postId, userId);
+		return ResponseEntity.ok(post);
 	}
-	
-	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> deletePost(@PathVariable String id) {
-		try {
-			postService.deletePost(id);
-			return ResponseEntity.noContent().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
+
+	@PutMapping("/{postId}")
+	@Operation(summary = "Update post", description = "Update a post")
+	@ApiResponse(responseCode = "200", description = "Post updated",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Not Found",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> updatePost(
+			@PathVariable String postId,
+			@Valid @RequestBody Post post,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole) {
+
+		Post updatedPost = postService.updatePost(postId, post, userId, userRole);
+		return ResponseEntity.ok(updatedPost);
 	}
-	
-	@GetMapping("/search")
-	public ResponseEntity<Page<Post>> searchPosts(
-			@RequestParam String query,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(required = false) String status) {
-		
-		Page<Post> posts;
-		if (status != null && !status.isEmpty()) {
-			PostStatus postStatus = PostStatus.valueOf(status.toUpperCase());
-			posts = postService.searchPostsByStatusAndKeyword(query, postStatus, page, size);
-		} else {
-			posts = postService.searchPosts(query, page, size);
-		}
-		
-		return ResponseEntity.ok(posts);
+
+	@PostMapping("/{postId}")
+	@Operation(summary = "Reply post", description = "Reply a post")
+	@ApiResponse(responseCode = "200", description = "Post replied",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Not Found",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> replyPost(
+			@PathVariable String postId,
+			@RequestParam(required = false) String replyId,
+			@RequestBody String comment,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole) {
+		Post updatedPost = postService.replyPost(postId, replyId, comment, userId, userRole);
+		return ResponseEntity.ok(updatedPost);
 	}
-	
-	@GetMapping("/user/{userId}")
-	public ResponseEntity<Page<Post>> getPostsByUserId(
-			@PathVariable Long userId,
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(required = false) String status) {
-		
-		Page<Post> posts;
-		if (status != null && !status.isEmpty()) {
-			PostStatus postStatus = PostStatus.valueOf(status.toUpperCase());
-			posts = postService.getPostsByUserIdAndStatus(userId, postStatus, page, size);
-		} else {
-			posts = postService.getPostsByUserId(userId, page, size);
-		}
-		
-		return ResponseEntity.ok(posts);
+
+	/** Transfer post status */
+	@PatchMapping("/{postId}")
+	@Operation(summary = "Transfer post status", description = "Operations: BAN, UNBAN, HIDE, SHOW, DELETE, RECOVER, ARCHIVE, UNARCHIVE")
+	@ApiResponse(responseCode = "200", description = "Post status transferred",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Not Found",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> transferPostStatus(
+			@RequestParam String operation,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole,
+			@PathVariable String postId) {
+		Post updatedPost = postService.transferPostStatus(postId, operation, userId, userRole);
+		return ResponseEntity.ok(updatedPost);
 	}
-	
-	@GetMapping("/my-drafts")
-	public ResponseEntity<Page<Post>> getMyDrafts(
-			@RequestParam Long userId, // 实际项目中从JWT token获取
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size) {
-		
-		Page<Post> drafts = postService.getUserDrafts(userId, page, size);
-		return ResponseEntity.ok(drafts);
+
+	/** Transfer reply visibility */
+	@PatchMapping("/{postId}/reply/{replyId}")
+	@Operation(summary = "Transfer reply visibility", description = "Transfer reply visibility")
+	@ApiResponse(responseCode = "200", description = "Reply visibility transferred",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "400", description = "Bad Request",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	@ApiResponse(responseCode = "404", description = "Not Found",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<Post> toggleReplyActive(
+			@PathVariable String replyId,
+			@RequestParam(required = false) String subReplyId,
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String updaterId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String updaterRole,
+			@PathVariable String postId) {
+		Post updatedPost = postService.toggleReplyActive(postId, replyId, subReplyId, updaterId, updaterRole);
+		return ResponseEntity.ok(updatedPost);
 	}
-	
-	@GetMapping("/popular")
-	public ResponseEntity<Page<Post>> getPopularPosts(
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size) {
-		
-		Page<Post> posts = postService.getPopularPosts(page, size);
-		return ResponseEntity.ok(posts);
-	}
-	
-	@GetMapping("/latest")
-	public ResponseEntity<Page<Post>> getLatestPosts(
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "10") int size) {
-		
-		Page<Post> posts = postService.getLatestPosts(page, size);
-		return ResponseEntity.ok(posts);
-	}
-	
-	// admin
-	@PutMapping("/{id}/ban")
-	public ResponseEntity<Post> banPost(@PathVariable String id) {
-		try {
-			Optional<Post> post = postService.getPostById(id);
-			if (post.isPresent()) {
-				Post existingPost = post.get();
-				existingPost.setStatus(PostStatus.BANNED);
-				Post updatedPost = postService.updatePost(id, existingPost);
-				return ResponseEntity.ok(updatedPost);
-			}
-			return ResponseEntity.notFound().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
-	}
-	
-	@PutMapping("/{id}/unban")
-	public ResponseEntity<Post> unbanPost(@PathVariable String id) {
-		try {
-			Optional<Post> post = postService.getPostById(id);
-			if (post.isPresent()) {
-				Post existingPost = post.get();
-				existingPost.setStatus(PostStatus.PUBLISHED);
-				Post updatedPost = postService.updatePost(id, existingPost);
-				return ResponseEntity.ok(updatedPost);
-			}
-			return ResponseEntity.notFound().build();
-		} catch (RuntimeException e) {
-			return ResponseEntity.notFound().build();
-		}
-	}
+
 }
