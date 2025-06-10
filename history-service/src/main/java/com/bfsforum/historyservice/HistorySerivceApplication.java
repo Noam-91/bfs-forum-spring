@@ -9,7 +9,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @EnableDiscoveryClient
 @SpringBootApplication
 @EnableCaching
-@EnableAspectJAutoProxy(exposeProxy = true)
+//@EnableAspectJAutoProxy(exposeProxy = true)
 public class HistorySerivceApplication {
 
     public static void main(String[] args) {

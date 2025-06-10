@@ -7,6 +7,7 @@ import com.bfsforum.historyservice.dto.PostDto;
 import com.bfsforum.historyservice.repository.HistoryRepo;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.cache.annotation.CacheEvict;
@@ -34,6 +35,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class HistoryService {
+    // self injection of the spring proxy, otherwise cache will not work
+    @Autowired
+    private HistoryService self;
 
     private final HistoryRepo historyRepo;
     private final StreamBridge streamBridge;
@@ -47,13 +51,6 @@ public class HistoryService {
 
     @Value("${bfs-forum.kafka.request-binding-name}") //Custom value
     private String requestBindingName;
-    /** A wrapper only for test purpose of jap findByUserIdAndPostId method
-     */
-    public Optional<History> getByUserAndPost(String userId, String postId) {
-        return historyRepo.findByUserIdAndPostId(userId, postId);
-    }
-
-
 
     /**
      * Write a history record in DB every time consumes a PostViewedEvent
@@ -145,8 +142,8 @@ public class HistoryService {
 
     public Page<EnrichedHistoryDto> getEnrichedHistory(
             String userId, Pageable pageable) {
-        HistoryService proxy = (HistoryService) AopContext.currentProxy();
-        List<EnrichedHistoryDto> full = proxy.loadFullEnrichedHistory(userId);
+//        HistoryService proxy = (HistoryService) AopContext.currentProxy();
+        List<EnrichedHistoryDto> full = self.loadFullEnrichedHistory(userId);
         return toPage(full, pageable);
 
     }
@@ -156,8 +153,8 @@ public class HistoryService {
     public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
         try {
             String lower = keyword.toLowerCase();
-            HistoryService proxy = (HistoryService) AopContext.currentProxy();
-            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
+//            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
                         PostDto p = dto.getPost();
                         return (p.getTitle()   != null && p.getTitle().toLowerCase().contains(lower))
@@ -176,8 +173,8 @@ public class HistoryService {
      */
     public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
         try {
-            HistoryService proxy = (HistoryService) AopContext.currentProxy();
-            List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
+//            HistoryService proxy = (HistoryService) AopContext.currentProxy();
+            List<EnrichedHistoryDto> filtered = self.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
                         LocalDate viewed = dto.getViewedAt().toLocalDate();
                         return (!viewed.isBefore(startDate))

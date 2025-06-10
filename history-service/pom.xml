@@ -174,10 +174,10 @@
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
-                    <excludes>
-                        <!-- exclude any files in com/bfsforum/…/ignoredfolder/ -->
-                        <exclude>**/com/bfsforum/**/ignoredfolder/**/*.java</exclude>
-                    </excludes>
+<!--                    <excludes>-->
+<!--                        &lt;!&ndash; exclude any files in com/bfsforum/…/ignoredfolder/ &ndash;&gt;-->
+<!--                        <exclude>**/com/bfsforum/**/ignoredfolder/**/*.java</exclude>-->
+<!--                    </excludes>-->
                 </configuration>
             </plugin>
             <plugin>

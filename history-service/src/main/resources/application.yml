@@ -11,30 +11,29 @@ spring:
   cloud:
     function:
       definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
-      bindings:
-        postEnrichRequestEventConsumer-in-0:
-          content-type: application/json
-        postNotificationEventConsumer-in-0:
-          content-type: application/json
+#      bindings:
+#        postEnrichRequestEventConsumer-in-0:
+#          content-type: application/json
+#        postNotificationEventConsumer-in-0:
+#          content-type: application/json
 
     stream:
       bindings:
         # 1) Handles the list-of-posts enrichment replies
         postEnrichRequestEventConsumer-in-0:
           destination: posts-enrichment-response
-          content-type: application/json
 
 
         # 2) Listens for single-post notifications
         postNotificationEventConsumer-in-0:
           destination: post-view-notification
-          content-type: application/json
+
 
 
         # 3) Outbound for your StreamBridge
         historyEventSender-out-0:
           destination: posts-enrichment-request
-          content-type: application/json
+
 
   datasource:
     url: jdbc:mysql://localhost:3306/bfsforum
