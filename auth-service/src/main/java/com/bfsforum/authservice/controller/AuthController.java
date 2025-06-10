@@ -2,6 +2,7 @@ package com.bfsforum.authservice.controller;
 
 import com.bfsforum.authservice.domain.User;
 import com.bfsforum.authservice.dto.LoginRequest;
+import com.bfsforum.authservice.exception.ErrorResponse;
 import com.bfsforum.authservice.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,7 +38,7 @@ public class AuthController {
       examples = @ExampleObject(value = "{ \"message\": \"Login Successfully\" }")))
   @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid credentials",
       content = @Content(mediaType = "application/json",
-      examples = @ExampleObject(value = "{ \"message\": \"Invalid credentials\" }")))
+          schema = @Schema(implementation = ErrorResponse.class)))
   public ResponseEntity<Map<String,String>> login(@Valid @RequestBody LoginRequest loginRequest,
                                                   HttpServletResponse response){
     String token = authService.loginAndIssueToken(loginRequest);
@@ -71,7 +72,7 @@ public class AuthController {
       schema = @Schema(implementation = User.class) ))
   @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid credentials",
       content = @Content(mediaType = "application/json",
-      examples = @ExampleObject(value = "{ \"message\": \"Invalid credentials\" }")))
+          schema = @Schema(implementation = ErrorResponse.class)))
   public ResponseEntity<?> checkAuth(
       HttpServletResponse response,
       @Parameter(
