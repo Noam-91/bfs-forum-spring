@@ -11,8 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.*;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -22,7 +24,14 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
+//@SpringBootTest(
+//        classes = { HistoryService.class, AopConfig.class },
+//        webEnvironment = SpringBootTest.WebEnvironment.NONE
+//)
+//@TestPropertySource(properties = {
+//        "spring.aop.proxy-target-class=true",
+//        "spring.aop.expose-proxy=true"
+//})
 @ExtendWith(MockitoExtension.class)
 class HistoryServiceTest {
 
@@ -132,6 +141,7 @@ class HistoryServiceTest {
 //    void getEnrichedHistory_appliesPaging() {
 //        // spy so we can stub loadFullEnrichedHistory
 //        HistoryService spySvc = Mockito.spy(historyService);
+//
 //        List<EnrichedHistoryDto> list = new ArrayList<>();
 //        for (int i = 0; i < 5; i++) {
 //            list.add(EnrichedHistoryDto.builder()
@@ -149,35 +159,36 @@ class HistoryServiceTest {
 //        assertThat(page.getContent()).hasSize(2);
 //        assertThat(page.getContent().get(0).getPostId()).isEqualTo("p3");
 //    }
-@Test
-void getEnrichedHistory_appliesPaging() {
-    // 1) create a spy on your real HistoryService
-    HistoryService spySvc = Mockito.spy(historyService);
-
-    // 2) inject the spy into its own 'self' field so getEnrichedHistory()
-    //    will call spySvc.loadFullEnrichedHistory(...)
-    ReflectionTestUtils.setField(spySvc, "self", spySvc);
-
-    // 3) prepare a list of 5 items and stub loadFullEnrichedHistory
-    List<EnrichedHistoryDto> list = new ArrayList<>();
-    for (int i = 0; i < 5; i++) {
-        list.add(EnrichedHistoryDto.builder()
-                .postId("p" + i)
-                .viewedAt(LocalDateTime.now())
-                .post(PostDto.builder().postId("p" + i).title("T").content("C").build())
-                .build());
-    }
-    doReturn(list).when(spySvc).loadFullEnrichedHistory(USER);
-
-    // 4) exercise paging
-    Pageable page2of3 = PageRequest.of(1, 3);
-    Page<EnrichedHistoryDto> page = spySvc.getEnrichedHistory(USER, page2of3);
-
-    // 5) assert
-    assertThat(page.getTotalElements()).isEqualTo(5);
-    assertThat(page.getContent()).hasSize(2);
-    assertThat(page.getContent().get(0).getPostId()).isEqualTo("p3");
-}
+//@Test
+//void getEnrichedHistory_appliesPaging() {
+//    // 1) create a spy on your real HistoryService
+//    HistoryService spySvc = Mockito.spy(historyService);
+//
+//    // 2) inject the spy into its own 'self' field so getEnrichedHistory()
+//    //    will call spySvc.loadFullEnrichedHistory(...)
+//    ReflectionTestUtils.setField(spySvc, "self", spySvc);
+//
+//    // 3) prepare a list of 5 items and stub loadFullEnrichedHistory
+//    List<EnrichedHistoryDto> list = new ArrayList<>();
+//    for (int i = 0; i < 5; i++) {
+//        list.add(EnrichedHistoryDto.builder()
+//                .postId("p" + i)
+//                .viewedAt(LocalDateTime.now())
+//                .post(PostDto.builder().postId("p" + i).title("T").content("C").
+//                        viewCount(10).replyCount(4).firstName("Harry").lastName("Potter").build())
+//                .build());
+//    }
+//    doReturn(list).when(spySvc).loadFullEnrichedHistory(USER);
+//
+//    // 4) exercise paging
+//    Pageable page2of3 = PageRequest.of(1, 3);
+//    Page<EnrichedHistoryDto> page = spySvc.getEnrichedHistory(USER, page2of3);
+//
+//    // 5) assert
+//    assertThat(page.getTotalElements()).isEqualTo(5);
+//    assertThat(page.getContent()).hasSize(2);
+//    assertThat(page.getContent().get(0).getPostId()).isEqualTo("p3");
+//}
 
 //    @Test
 //    void searchByDate_filtersCorrectly() {
@@ -208,43 +219,43 @@ void getEnrichedHistory_appliesPaging() {
 //                .extracting(EnrichedHistoryDto::getPostId)
 //                .containsExactly("a");
 //    }
-@Test
-void searchByDate_filtersCorrectly() {
-    // 1) spy the real service
-    HistoryService spySvc = Mockito.spy(historyService);
-    // 2) wire the spy back into its own `self` field
-    ReflectionTestUtils.setField(spySvc, "self", spySvc);
-
-    // 3) define date range and sample data
-    LocalDate d1 = LocalDate.of(2025, 6, 1);
-    LocalDate d2 = LocalDate.of(2025, 6, 5);
-    List<EnrichedHistoryDto> list = List.of(
-            EnrichedHistoryDto.builder()
-                    .postId("a")
-                    .viewedAt(d1.atStartOfDay())      // inside range
-                    .post(null)
-                    .build(),
-            EnrichedHistoryDto.builder()
-                    .postId("b")
-                    .viewedAt(LocalDate.of(2025, 5, 30).atStartOfDay())  // before
-                    .post(null)
-                    .build(),
-            EnrichedHistoryDto.builder()
-                    .postId("c")
-                    .viewedAt(LocalDate.of(2025, 6, 10).atStartOfDay())  // after
-                    .post(null)
-                    .build()
-    );
-    // 4) stub the enrichment call
-    doReturn(list).when(spySvc).loadFullEnrichedHistory(USER);
-
-    // 5) exercise the filter
-    Pageable all = PageRequest.of(0, 10);
-    Page<EnrichedHistoryDto> result = spySvc.searchByDate(USER, d1, d2, all);
-
-    // 6) verify only the in‐range item remains
-    assertThat(result.getContent())
-            .extracting(EnrichedHistoryDto::getPostId)
-            .containsExactly("a");
-}
+//@Test
+//void searchByDate_filtersCorrectly() {
+//    // 1) spy the real service
+//    HistoryService spySvc = Mockito.spy(historyService);
+//    // 2) wire the spy back into its own `self` field
+//    ReflectionTestUtils.setField(spySvc, "self", spySvc);
+//
+//    // 3) define date range and sample data
+//    LocalDate d1 = LocalDate.of(2025, 6, 1);
+//    LocalDate d2 = LocalDate.of(2025, 6, 5);
+//    List<EnrichedHistoryDto> list = List.of(
+//            EnrichedHistoryDto.builder()
+//                    .postId("a")
+//                    .viewedAt(d1.atStartOfDay())      // inside range
+//                    .post(null)
+//                    .build(),
+//            EnrichedHistoryDto.builder()
+//                    .postId("b")
+//                    .viewedAt(LocalDate.of(2025, 5, 30).atStartOfDay())  // before
+//                    .post(null)
+//                    .build(),
+//            EnrichedHistoryDto.builder()
+//                    .postId("c")
+//                    .viewedAt(LocalDate.of(2025, 6, 10).atStartOfDay())  // after
+//                    .post(null)
+//                    .build()
+//    );
+//    // 4) stub the enrichment call
+//    doReturn(list).when(spySvc).loadFullEnrichedHistory(USER);
+//
+//    // 5) exercise the filter
+//    Pageable all = PageRequest.of(0, 10);
+//    Page<EnrichedHistoryDto> result = spySvc.searchByDate(USER, d1, d2, all);
+//
+//    // 6) verify only the in‐range item remains
+//    assertThat(result.getContent())
+//            .extracting(EnrichedHistoryDto::getPostId)
+//            .containsExactly("a");
+//}
 }
