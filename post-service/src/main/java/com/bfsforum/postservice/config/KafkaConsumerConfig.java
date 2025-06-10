@@ -48,14 +48,13 @@ public class KafkaConsumerConfig {
     };
   }
 
-  //todo: Ask for user full name
   @Bean
-  public Consumer<Message<UserInfoReply>> postsEnrichmentConsumer(RequestReplyManager requestReplyManager) {
+  public Consumer<Message<UserInfoReply>> userInfoEventConsumer(RequestReplyManager<UserInfoReply> requestReplyManager) {
     return message -> {
+      log.info("Received userInfo reply");
       String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
       try {
         UserInfoReply userInfoReply = message.getPayload();
-
         requestReplyManager.completeFuture(correlationId, userInfoReply);
       } catch (Exception e) {
         log.error("Enrichment failed for request: {}", correlationId, e);

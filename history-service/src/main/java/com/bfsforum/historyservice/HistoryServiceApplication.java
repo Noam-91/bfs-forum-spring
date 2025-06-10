@@ -10,10 +10,10 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 @SpringBootApplication
 @EnableCaching
 @EnableAspectJAutoProxy(exposeProxy = true)
-public class HistorySerivceApplication {
+public class HistoryServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(HistorySerivceApplication.class, args);
+        SpringApplication.run(HistoryServiceApplication.class, args);
     }
 
 }

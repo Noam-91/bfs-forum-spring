@@ -15,18 +15,18 @@ spring:
 
   cloud:
     function:
-      definition: postsEnrichmentConsumer
+      definition: postsEnrichmentConsumer;userInfoEventConsumer
     stream:
       bindings:
-        post-view-notification:
+        post-view-notification-out-0:
           destination: post-view-notification
-        postsEnrichmentSupplier:
+        postsEnrichmentSupplier-out-0:
           destination: posts-enrichment-response
-        postsEnrichmentConsumer:
+        postsEnrichmentConsumer-in-0:
           destination: posts-enrichment-request
-        userInfoEventSupplier:
+        userInfoEventSupplier-out-0:
           destination: user-info-request
-        userInfoEventConsumer:
+        userInfoEventConsumer-in-0:
           destination: user-info-response
 
 app:

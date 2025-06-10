@@ -103,6 +103,7 @@ public class PostService {
     Message<String> message = MessageBuilder.withPayload(creatorId)
         .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
         .build();
+    log.debug("Sending userInfo request: {} to kafka topic: {}", message, userInfoRequestBindingName);
     streamBridge.send(userInfoRequestBindingName, message);
 
     UserInfoReply userInfo = requestReplyManager.awaitFuture(correlationId, future);
@@ -110,6 +111,7 @@ public class PostService {
     post.setUserId(creatorId);
     post.setFirstName(userInfo.getFirstName());
     post.setLastName(userInfo.getLastName());
+    post.setStatus(post.getStatus());
     post.setCreatedAt(LocalDateTime.now());
     post.setUpdatedAt(LocalDateTime.now());
     return postRepository.save(post);
