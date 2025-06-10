@@ -4,6 +4,7 @@ import com.bfsforum.userservice.dto.*;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.entity.UserProfile;
+import com.bfsforum.userservice.exceptions.UserAlreadyExistsException;
 import com.bfsforum.userservice.exceptions.UserNotFoundException;
 import com.bfsforum.userservice.exceptions.UserProfileNotFoundException;
 import com.bfsforum.userservice.repository.UserProfileRepository;
@@ -62,6 +63,10 @@ public class UserService {
      * @return The created User entity.
      */
     public User register(UserRegisterMessage dto) {
+
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new UserAlreadyExistsException("User with username '" + dto.getUsername() + "' already exists");
+        }
 
         // 1. 构建并保存用户
         User user = User.builder()

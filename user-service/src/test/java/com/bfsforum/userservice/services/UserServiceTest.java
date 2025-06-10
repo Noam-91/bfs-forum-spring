@@ -1,12 +1,15 @@
 package com.bfsforum.userservice.services;
 
+import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserProfileDto;
 import com.bfsforum.userservice.dto.UserRegisterMessage;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.entity.UserProfile;
+import com.bfsforum.userservice.exceptions.UserAlreadyExistsException;
 import com.bfsforum.userservice.repository.UserProfileRepository;
 import com.bfsforum.userservice.repository.UserRepository;
+import com.bfsforum.userservice.service.RequestReplyManager;
 import com.bfsforum.userservice.service.UserService;
 
 import org.junit.jupiter.api.DisplayName;
@@ -14,31 +17,35 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
-
-    @Mock
-    private StreamBridge streamBridge;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private UserProfileRepository userProfileRepository;
-
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private StreamBridge streamBridge;
+    @Mock
+    private RequestReplyManager<EmailVerificationReply> requestReplyManager;
 
     @InjectMocks
     private UserService userService;
@@ -49,6 +56,14 @@ class UserServiceTest {
         when(userRepository.existsByUsername("zhijun")).thenReturn(true);
         boolean result = userService.usernameExists("zhijun");
         assertTrue(result);
+        verify(userRepository).existsByUsername("zhijun");
+    }
+    @Test
+    @DisplayName("Should return true if username exists")
+    void testUsernameExists_returnsFalse() {
+        when(userRepository.existsByUsername("zhijun")).thenReturn(false);
+        boolean result = userService.usernameExists("zhijun");
+        assertFalse(result);
         verify(userRepository).existsByUsername("zhijun");
     }
 
@@ -74,6 +89,21 @@ class UserServiceTest {
         // Assert
         assertEquals("test", result.getUsername());
         verify(streamBridge).send(eq("mock-binding"), any());
+    }
+
+    @Test
+    void testRegister_usernameAlreadyExists() {
+        // Arrange
+        UserRegisterMessage dto = new UserRegisterMessage("existingUser", "test123", "admin", "admin", "default.png");
+
+        when(userRepository.existsByUsername("existingUser")).thenReturn(true);
+
+        assertThrows(UserAlreadyExistsException.class, () -> {
+            userService.register(dto);
+        });
+
+        verify(userRepository, never()).save(any(User.class));
+        verify(streamBridge, never()).send(any(), any());
     }
 
     @Test
@@ -164,4 +194,15 @@ class UserServiceTest {
         verify(userRepository).save(user);
     }
 
+    @Test
+    @DisplayName("Should return user by username")
+    void testFindByUsername_success() {
+        User user = User.builder().id("123").username("zhijun").build();
+        when(userRepository.findByUsername("zhijun")).thenReturn(Optional.of(user));
+
+        Optional<User> result = userService.findByUsername("zhijun");
+
+        assertTrue(result.isPresent());
+        assertEquals("zhijun", result.get().getUsername());
+    }
 }

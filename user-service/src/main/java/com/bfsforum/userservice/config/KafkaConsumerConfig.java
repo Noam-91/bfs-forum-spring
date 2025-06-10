@@ -54,13 +54,14 @@ public class KafkaConsumerConfig {
 
     @Value("${bfs-forum.kafka.user-info-reply-binding-name}")
     private String userInfoReplyBinding;
+
     @Bean
     public Consumer<Message<String>> userInfoRequestConsumer() {
         return message -> {
             String userId = message.getPayload();
             String correlationId = message.getHeaders().get(KafkaHeaders.CORRELATION_ID, String.class);
 
-            log.info("Received user info request for userId={}, correlationId={}", userId, correlationId);
+            log.info("📥 Received user info request: userId={}, correlationId={}", userId, correlationId);
 
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found: " + userId));
@@ -76,7 +77,9 @@ public class KafkaConsumerConfig {
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
                     .build();
 
-            streamBridge.send(userInfoReplyBinding, replyMessage);
+            boolean sent = streamBridge.send(userInfoReplyBinding, replyMessage);
+            log.debug("📤 Sent reply to topic '{}'? {}", userInfoReplyBinding, sent);
+            log.debug("📤 Reply payload: {}", reply);
         };
     }
 }

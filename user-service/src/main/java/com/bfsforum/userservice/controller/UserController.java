@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
 import org.springframework.http.*;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -39,7 +40,8 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final KafkaConsumerConfig kafkaConsumerConfig;
+    private final StreamBridge streamBridge;
+
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Create a new user and store profile info.")
     @ApiResponse(responseCode = "200", description = "User registered successfully",
@@ -82,8 +84,31 @@ public class UserController {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
         }
     }
-    // 962c152f-c68c-43a2-a92f-5f02e26d3115
 
+//    @PostMapping("/mock-user-info-request")
+//    public ResponseEntity<Map<String, String>> mockUserInfoRequest(@RequestParam String userId) {
+//        String correlationId = UUID.randomUUID().toString();
+//
+//        Message<String> message = MessageBuilder
+//                .withPayload(userId)
+//                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
+//                .build();
+//
+//        boolean success = streamBridge.send("userInfoRequest-out-0", message);
+//
+//        if (success) {
+//            return ResponseEntity.ok(Map.of(
+//                    "message", "✅ Kafka request sent",
+//                    "userId", userId,
+//                    "correlationId", correlationId
+//            ));
+//        } else {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+//                    "message", "❌ Kafka send failed",
+//                    "userId", userId
+//            ));
+//        }
+//    }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Get user profile", description = "Retrieve profile of the user by ID.")
@@ -143,15 +168,15 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", message));
     }
 
-    @PutMapping("/{userId}/activate")
-    @Operation(
-            summary = "Activate user via email service",
-            description = "Email service can only activate a user"
-    )
-    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable String userId) {
-        userService.setUserActivation(userId, true);
-        return ResponseEntity.ok(Map.of("message", "User activated by email service"));
-    }
+//    @PutMapping("/{userId}/activate")
+//    @Operation(
+//            summary = "Activate user via email service",
+//            description = "Email service can only activate a user"
+//    )
+//    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable String userId) {
+//        userService.setUserActivation(userId, true);
+//        return ResponseEntity.ok(Map.of("message", "User activated by email service"));
+//    }
 
     @PostMapping("/{userId}/role")
     @Operation(summary = "Update user role", description = "Change a user's role (e.g. promote to admin).")
@@ -165,7 +190,7 @@ public class UserController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/page")
     @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users.")
     public ResponseEntity<Page<User>> getAllUsers(@RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(defaultValue = "10") int size) {
