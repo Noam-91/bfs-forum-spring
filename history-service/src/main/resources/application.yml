@@ -1,0 +1,89 @@
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry:     false
+
+spring:
+  application:
+    name: history-service
+  kafka:
+    bootstrap-servers: localhost:9092
+  cloud:
+    function:
+      definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
+#      bindings:
+#        postEnrichRequestEventConsumer-in-0:
+#          content-type: application/json
+#        postNotificationEventConsumer-in-0:
+#          content-type: application/json
+
+    stream:
+      bindings:
+        # 1) Handles the list-of-posts enrichment replies
+        postEnrichRequestEventConsumer-in-0:
+          destination: posts-enrichment-response
+
+
+        # 2) Listens for single-post notifications
+        postNotificationEventConsumer-in-0:
+          destination: post-view-notification
+
+
+
+        # 3) Outbound for your StreamBridge
+        historyEventSender-out-0:
+          destination: posts-enrichment-request
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/bfsforum
+    driver: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 88Yj10hy0326*
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 5757
+
+
+bfs-forum:
+  kafka:
+    request-binding-name: historyEventSender-out-0
+
+#     <----v2---->
+#  kafka:
+#    consumer:
+#      group-id: history-service-group
+#      auto-offset-reset: earliest
+#
+#      # wrap both in the ErrorHandlingDeserializer
+#      key-deserializer:   org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+#
+#      properties:
+#        # delegate the real work
+#        spring.deserializer.key.delegate.class:   org.apache.kafka.common.serialization.StringDeserializer
+#        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+#
+#        # tell JSON deserializer what type to bind when no headers are present
+#        spring.json.value.default.type: com.bfsforum.historyservice.kafka.event.HistoryPostViewedEvent
+#        spring.json.trusted.packages: "*" # Or simply "" for all
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      #<---v1--->
+#    consumer:
+#      group-id: order-group
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+#      properties:
+#        spring.json.value.default.type: com.example.commondto.event.PaymentEvent # Replace with your actual class name
+#        spring.json.trusted.packages: "" # Or simply "" for all
+
