@@ -1,0 +1,41 @@
+spring:
+  application:
+    post-service
+  profiles:
+    active: dev
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://admin:5H5TUOlCTwjbcGKt@cluster0.4cdeyph.mongodb.net/postdb?retryWrites=true&w=majority}
+#      host: localhost   # local test
+#      port: 27017
+      database: postdb
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+  cloud:
+    function:
+      definition: postsEnrichmentConsumer
+    stream:
+      bindings:
+        post-view-notification:
+          destination: post-view-notification
+        posts-enrichment-response:
+          destination: posts-enrichment-response
+        postsEnrichmentConsumer:
+          destination: posts-enrichment-request
+
+app:
+  kafka:
+    topics:
+      post-view-notification: post-view-notification
+      posts-enrichment-response: posts-enrichment-response
+
+server:
+  port: 3474 # test
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false

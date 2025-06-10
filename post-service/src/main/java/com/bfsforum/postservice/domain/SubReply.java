@@ -1,32 +1,29 @@
 package com.bfsforum.postservice.domain;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * @author luluxue
- * @date 2025-06-06
+ * @date 2025-06-09
  */
-// subreply
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SubReply {
-	private String subReplyId = UUID.randomUUID().toString();        // subreplyID
-	private Long userId;
-	private String parentReplyId;
+	@Builder.Default
+	private String id = UUID.randomUUID().toString();
+	private String userId;
 	private String comment;
+	@Builder.Default
 	private Boolean isActive = true;
-	private LocalDateTime createdAt = LocalDateTime.now();
-	
-	// constructor
-	public SubReply(Long userId, String comment) {
-		this.userId = userId;
-		this.parentReplyId = parentReplyId;
-		this.comment = comment;
-	}
+	private LocalDateTime createdAt;
 }

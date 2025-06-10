@@ -2,10 +2,8 @@ package com.bfsforum.postservice.domain;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -20,146 +18,46 @@ import java.util.List;
 
 @Document(collection = "posts")
 @Data
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Post {
 	@Id
 	private String id;
-	
-	@NotNull
-	private Long userId;
-	
-	@NotBlank
+
+	private String userId;
+
+	private String firstName;
+
+	private String lastName;
+
+	@NotBlank(message = "Title cannot be blank")
+	@Size(min = 1, max = 200, message = "Title must be between 1 and 200 characters")
 	private String title;
-	
-	@NotBlank
+
+	@NotBlank(message = "Content cannot be blank")
+	@Size(min = 1, max = 10000, message = "Content must be between 1 and 10000 characters")
 	private String content;
+
+	@Builder.Default
+	private String status = PostStatus.UNPUBLISHED.toString();
 	
-	private Boolean isArchived = false;
-	
-	private PostStatus status = PostStatus.UNPUBLISHED;  // post status
-	
-	private LocalDateTime createdAt = LocalDateTime.now();
-	private LocalDateTime updatedAt = LocalDateTime.now();
-	
-	
+	private LocalDateTime createdAt;
+
+	private LocalDateTime updatedAt;
+
 	// attachments
+	@Builder.Default
 	private List<String> images = new ArrayList<>();
+	@Builder.Default
 	private List<String> attachments = new ArrayList<>();
-	
-	private List<PostReply> postReplies = new ArrayList<>();
-	
-	// 统计字段 (可以通过postReplies计算，但为了性能可以单独存储)
+	@Builder.Default
+	private List<Reply> replies = new ArrayList<>();
+	@Builder.Default
 	private Integer viewCount = 0;
+	@Builder.Default
 	private Integer replyCount = 0;
-	
 
-	// Getters and setters
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public Long getUserId() {
-		return userId;
-	}
-
-	public void setUserId(Long userId) {
-		this.userId = userId;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getContent() {
-		return content;
-	}
-
-	public void setContent(String content) {
-		this.content = content;
-	}
-
-	public Boolean getIsArchived() {
-		return isArchived;
-	}
-
-	public void setIsArchived(Boolean archived) {
-		isArchived = archived;
-	}
-
-	public PostStatus getStatus() {
-		return status;
-	}
-
-	public void setStatus(PostStatus status) {
-		this.status = status;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
-	public List<String> getImages() {
-		return images;
-	}
-
-	public void setImages(List<String> images) {
-		this.images = images;
-	}
-
-	public List<String> getAttachments() {
-		return attachments;
-	}
-
-	public void setAttachments(List<String> attachments) {
-		this.attachments = attachments;
-	}
-
-	public List<PostReply> getPostReplies() {
-		return postReplies;
-	}
-
-	public void setPostReplies(List<PostReply> postReplies) {
-		this.postReplies = postReplies;
-	}
-
-	public Integer getViewCount() {
-		return viewCount;
-	}
-
-	public void setViewCount(Integer viewCount) {
-		this.viewCount = viewCount;
-	}
-
-	public Integer getReplyCount() {
-		return replyCount;
-	}
-
-	public void setReplyCount(Integer replyCount) {
-		this.replyCount = replyCount;
-	}
 }
 
 
