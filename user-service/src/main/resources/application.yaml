@@ -18,28 +18,27 @@ spring:
 
   cloud:
     function:
-      definition: emailVerificationReplyConsumer;userInfoReplyConsumer
+      definition: emailVerificationReplyConsumer; userInfoReplyConsumer; userInfoRequestConsumer
     stream:
       bindings:
         userRegister-out-0:
           destination: register-notification
-          group: user-service
 
         tokenVerify-out-0:
           destination: verification-request
-          group: user-service
 
         emailVerificationReplyConsumer-in-0:
           destination: verification-response
-          group: user-service
 
-        userInfoRequest-in-0:
+        userInfoRequestConsumer-in-0:
           destination: user-info-request
-          group: user-service
 
-        userInfoReplyConsumer-out-0:
+        userInfoReply-out-0:
           destination: user-info-response
-          group: user-service
+
+        # demo purpose
+        userInfoRequest-out-0:
+          destination: user-info-request
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -48,7 +47,7 @@ bfs-forum:
   kafka:
     user-register-binding-name: userRegister-out-0
     token-verify-binding-name: tokenVerify-out-0
-    user-info-reply-binding-name: userInfoReplyConsumer-out-0
+    user-info-reply-binding-name: userInfoReply-out-0
 
 eureka:
   client:

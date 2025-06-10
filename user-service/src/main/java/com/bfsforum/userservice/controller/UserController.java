@@ -1,6 +1,5 @@
 package com.bfsforum.userservice.controller;
 
-import com.bfsforum.userservice.config.KafkaConsumerConfig;
 import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserProfileDto;
 import com.bfsforum.userservice.dto.UserProfileResponse;
@@ -19,17 +18,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
 import org.springframework.http.*;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
+import org.springframework.web.bind.annotation.*;
 import java.util.Map;
-import java.util.UUID;
+
 
 @Slf4j
 @RestController
@@ -39,7 +34,8 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final KafkaConsumerConfig kafkaConsumerConfig;
+
+
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Create a new user and store profile info.")
     @ApiResponse(responseCode = "200", description = "User registered successfully",
@@ -82,7 +78,6 @@ public class UserController {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
         }
     }
-    // 962c152f-c68c-43a2-a92f-5f02e26d3115
 
 
     @GetMapping("/{userId}/profile")
@@ -143,16 +138,6 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", message));
     }
 
-    @PutMapping("/{userId}/activate")
-    @Operation(
-            summary = "Activate user via email service",
-            description = "Email service can only activate a user"
-    )
-    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable String userId) {
-        userService.setUserActivation(userId, true);
-        return ResponseEntity.ok(Map.of("message", "User activated by email service"));
-    }
-
     @PostMapping("/{userId}/role")
     @Operation(summary = "Update user role", description = "Change a user's role (e.g. promote to admin).")
     public ResponseEntity<Map<String, String>> updateUserRole(@PathVariable String userId,
@@ -165,7 +150,7 @@ public class UserController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/page")
     @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users.")
     public ResponseEntity<Page<User>> getAllUsers(@RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(defaultValue = "10") int size) {

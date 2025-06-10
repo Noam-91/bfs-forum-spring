@@ -2,20 +2,18 @@ package com.bfsforum.userservice.controller;
 
 import com.bfsforum.userservice.config.KafkaConsumerConfig;
 import com.bfsforum.userservice.dto.*;
-import com.bfsforum.userservice.entity.Role;
-import com.bfsforum.userservice.entity.User;
-import com.bfsforum.userservice.entity.UserProfile;
+import com.bfsforum.userservice.entity.*;
+import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.data.domain.*;
 import com.bfsforum.userservice.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -25,20 +23,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(controllers = UserController.class)
 class UserControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
     @MockitoBean
     private KafkaConsumerConfig kafkaConsumerConfig;
 
     @MockitoBean
     private UserService userService;
 
+    @MockitoBean
+    private StreamBridge streamBridge;
+
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
     void register_success() throws Exception {
@@ -59,7 +59,7 @@ class UserControllerTest {
 
     @Test
     void getProfile_success() throws Exception {
-        String id = UUID.randomUUID().toString(); // 改为 String 类型
+        String id = UUID.randomUUID().toString();
 
         UserProfile profile = UserProfile.builder()
                 .firstName("John")
