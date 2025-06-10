@@ -1,6 +1,5 @@
 package com.bfsforum.userservice.controller;
 
-import com.bfsforum.userservice.config.KafkaConsumerConfig;
 import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserProfileDto;
 import com.bfsforum.userservice.dto.UserProfileResponse;
@@ -22,15 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
 import org.springframework.http.*;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
+import org.springframework.web.bind.annotation.*;
 import java.util.Map;
-import java.util.UUID;
+
 
 @Slf4j
 @RestController
@@ -40,7 +34,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final StreamBridge streamBridge;
+
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Create a new user and store profile info.")
@@ -85,30 +79,6 @@ public class UserController {
         }
     }
 
-//    @PostMapping("/mock-user-info-request")
-//    public ResponseEntity<Map<String, String>> mockUserInfoRequest(@RequestParam String userId) {
-//        String correlationId = UUID.randomUUID().toString();
-//
-//        Message<String> message = MessageBuilder
-//                .withPayload(userId)
-//                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
-//                .build();
-//
-//        boolean success = streamBridge.send("userInfoRequest-out-0", message);
-//
-//        if (success) {
-//            return ResponseEntity.ok(Map.of(
-//                    "message", "✅ Kafka request sent",
-//                    "userId", userId,
-//                    "correlationId", correlationId
-//            ));
-//        } else {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-//                    "message", "❌ Kafka send failed",
-//                    "userId", userId
-//            ));
-//        }
-//    }
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Get user profile", description = "Retrieve profile of the user by ID.")
@@ -167,16 +137,6 @@ public class UserController {
         String message = isActive ? "User activated" : "User deactivated";
         return ResponseEntity.ok(Map.of("message", message));
     }
-
-//    @PutMapping("/{userId}/activate")
-//    @Operation(
-//            summary = "Activate user via email service",
-//            description = "Email service can only activate a user"
-//    )
-//    public ResponseEntity<Map<String, String>> activateFromEmail(@PathVariable String userId) {
-//        userService.setUserActivation(userId, true);
-//        return ResponseEntity.ok(Map.of("message", "User activated by email service"));
-//    }
 
     @PostMapping("/{userId}/role")
     @Operation(summary = "Update user role", description = "Change a user's role (e.g. promote to admin).")
