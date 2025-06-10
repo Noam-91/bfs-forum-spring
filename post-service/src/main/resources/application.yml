@@ -20,16 +20,21 @@ spring:
       bindings:
         post-view-notification:
           destination: post-view-notification
-        posts-enrichment-response:
+        postsEnrichmentSupplier:
           destination: posts-enrichment-response
         postsEnrichmentConsumer:
           destination: posts-enrichment-request
+        userInfoEventSupplier:
+          destination: user-info-request
+        userInfoEventConsumer:
+          destination: user-info-response
 
 app:
   kafka:
     topics:
       post-view-notification: post-view-notification
       posts-enrichment-response: posts-enrichment-response
+      user-info-request: user-info-request
 
 server:
   port: 3474 # test

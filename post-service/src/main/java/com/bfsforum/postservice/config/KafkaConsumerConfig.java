@@ -1,7 +1,9 @@
 package com.bfsforum.postservice.config;
 
 import com.bfsforum.postservice.domain.Post;
+import com.bfsforum.postservice.dto.UserInfoReply;
 import com.bfsforum.postservice.service.PostService;
+import com.bfsforum.postservice.service.RequestReplyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -47,4 +49,18 @@ public class KafkaConsumerConfig {
   }
 
   //todo: Ask for user full name
+  @Bean
+  public Consumer<Message<UserInfoReply>> postsEnrichmentConsumer(RequestReplyManager requestReplyManager) {
+    return message -> {
+      String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
+      try {
+        UserInfoReply userInfoReply = message.getPayload();
+
+        requestReplyManager.completeFuture(correlationId, userInfoReply);
+      } catch (Exception e) {
+        log.error("Enrichment failed for request: {}", correlationId, e);
+      }
+    };
+  }
+
 }

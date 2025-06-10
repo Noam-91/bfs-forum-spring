@@ -12,12 +12,12 @@ import java.util.UUID;
 @Builder
 public class ErrorResponse {
   @Builder.Default
-  LocalDateTime timestamp = LocalDateTime.now();;
+  LocalDateTime timestamp = LocalDateTime.now();
   String path;
   int status;
   String error;
   @Builder.Default
-  String requestId = UUID.randomUUID().toString();;
+  String requestId = UUID.randomUUID().toString();
 
 }
 

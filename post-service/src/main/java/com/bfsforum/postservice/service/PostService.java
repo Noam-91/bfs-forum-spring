@@ -2,6 +2,7 @@ package com.bfsforum.postservice.service;
 
 import com.bfsforum.postservice.dao.PostRepository;
 import com.bfsforum.postservice.domain.*;
+import com.bfsforum.postservice.dto.UserInfoReply;
 import com.bfsforum.postservice.exception.NotAuthorizedException;
 import com.bfsforum.postservice.exception.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 @Transactional
@@ -29,13 +31,19 @@ import java.util.regex.Pattern;
 public class PostService {
   private final PostRepository postRepository;
   private final StreamBridge  streamBridge;
+  private final RequestReplyManager<UserInfoReply> requestReplyManager;
 
   @Value("${app.kafka.topics.post-view-notification}")
   private String postViewBindingName;
 
-  public PostService(PostRepository postRepository, StreamBridge streamBridge) {
+  @Value("${app.kafka.topics.user-info-request}")
+  private String userInfoRequestBindingName;
+
+  public PostService(PostRepository postRepository, StreamBridge streamBridge,
+                     RequestReplyManager<UserInfoReply> requestReplyManager) {
     this.postRepository = postRepository;
     this.streamBridge = streamBridge;
+    this.requestReplyManager = requestReplyManager;
   }
 
   /**
@@ -87,8 +95,21 @@ public class PostService {
     if(creatorRole.equals(Role.UNVERIFIED.name())){
       throw new NotAuthorizedException("Only verified users can create posts");
     }
-    //todo: ask for full name
+
+    String correlationId = UUID.randomUUID().toString();
+    log.info("Request for userInfo: {} in post creation. Generated correlationId: {}", creatorId, correlationId);
+
+    CompletableFuture<UserInfoReply> future = requestReplyManager.createAndStoreFuture(correlationId);
+    Message<String> message = MessageBuilder.withPayload(creatorId)
+        .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
+        .build();
+    streamBridge.send(userInfoRequestBindingName, message);
+
+    UserInfoReply userInfo = requestReplyManager.awaitFuture(correlationId, future);
+
     post.setUserId(creatorId);
+    post.setFirstName(userInfo.getFirstName());
+    post.setLastName(userInfo.getLastName());
     post.setCreatedAt(LocalDateTime.now());
     post.setUpdatedAt(LocalDateTime.now());
     return postRepository.save(post);
@@ -342,6 +363,4 @@ public class PostService {
     // find all
     return postRepository.findAllPublished(pageable);
   }
-
-
 }
