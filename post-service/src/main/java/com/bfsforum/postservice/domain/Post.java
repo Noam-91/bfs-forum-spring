@@ -42,9 +42,6 @@ public class Post {
 	@Builder.Default
 	private String status = PostStatus.UNPUBLISHED.toString();
 
-	@Builder.Default
-	private Boolean isArchived = false;	//todo: archived related
-	
 	private LocalDateTime createdAt;
 
 	private LocalDateTime updatedAt;
