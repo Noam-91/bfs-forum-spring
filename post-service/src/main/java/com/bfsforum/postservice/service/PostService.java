@@ -155,8 +155,13 @@ public class PostService {
     if(replierRole.equals(Role.UNVERIFIED.name())){
       throw new NotAuthorizedException("Only verified users can reply posts");
     }
+
     Post post = postRepository.findById(postId)
         .orElseThrow(() -> new NotFoundException("Post not found"));
+
+    if(post.getStatus().equals(PostStatus.ARCHIVED.name())){
+      throw new IllegalArgumentException("Cannot reply to an archived post");
+    }
 
     // If replyId exist, it is a sub-reply to a reply
     if(replyId != null){
@@ -264,6 +269,28 @@ public class PostService {
           post.setStatus(PostStatus.PUBLISHED.name()); // Recover automatically moves it back to Published
         } else {
           throw new IllegalArgumentException("Cannot recover post from status: " + currentStatus);
+        }
+        break;
+
+      case ARCHIVE:
+        if (!updaterId.equals(post.getUserId())) {
+          throw new NotAuthorizedException("Only post owner can archive posts");
+        }
+        // Allow archiving if current status is ARCHIVED (idempotent) or PUBLISHED
+        if (currentStatus == PostStatus.ARCHIVED || currentStatus == PostStatus.PUBLISHED) {
+          post.setStatus(PostStatus.ARCHIVED.name());
+        } else {
+          throw new IllegalArgumentException("Cannot archive post from status: " + currentStatus);
+        }
+        break;
+
+      case UNARCHIVE:
+        if (!updaterId.equals(post.getUserId())) {
+          throw new NotAuthorizedException("Only post owner can unarchive posts");
+        }
+        // Only unarchive if currently ARCHIVED
+        if (currentStatus == PostStatus.ARCHIVED) {
+          post.setStatus(PostStatus.PUBLISHED.name());
         }
         break;
 

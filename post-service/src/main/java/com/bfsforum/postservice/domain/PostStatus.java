@@ -10,7 +10,8 @@ public enum PostStatus {
 	PUBLISHED,    // published
 	HIDDEN,       // setup by user
 	BANNED,       // banned by admin
-	DELETED;       // deleted
+	ARCHIVED,     // archived by user
+	DELETED;      // deleted
 
 	public static boolean isPostStatus(String statusString) {
 		if (statusString == null || statusString.trim().isEmpty()) {
