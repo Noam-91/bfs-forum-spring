@@ -63,8 +63,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Object> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<Object> handleRuntimeException(RuntimeException ex,
+                                                         HttpServletRequest request) {
         log.error("RuntimeException: {}", ex.getMessage());
-        return new ResponseEntity<>(Map.of("error", INTERNAL_SERVER_ERROR_MESSAGE), HttpStatus.INTERNAL_SERVER_ERROR);
+        ErrorResponse errorResponse = ErrorResponse.builder()
+            .path(request.getRequestURI())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error(ex.getMessage())
+            .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }
