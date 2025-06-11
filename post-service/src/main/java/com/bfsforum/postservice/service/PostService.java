@@ -184,6 +184,9 @@ public class PostService {
           .build();
       post.getReplies().add(reply);
     }
+
+    // replyCount increment
+    post.setReplyCount(post.getReplyCount()+1);
     postRepository.save(post);
     return post;
   }
@@ -307,6 +310,7 @@ public class PostService {
         .filter(r -> r.getId().equals(replyId))
         .findFirst()
         .orElseThrow(() -> new NotFoundException("Reply not found"));
+
     if (subReplyId != null) {
       SubReply subReply = reply.getSubReplies().stream()
           .filter(sr -> sr.getId().equals(subReplyId))
@@ -319,6 +323,9 @@ public class PostService {
         throw new NotAuthorizedException("Only reply owner, post owner and admin can change reply visibility");
       }
       subReply.setIsActive(!subReply.getIsActive());
+      // replyCount change
+      int countChange = subReply.getIsActive() ? 1 : -1;
+      post.setReplyCount(post.getReplyCount()+countChange);
     } else {
       if (!updaterId.equals(reply.getUserId()) &&
           !updaterId.equals(post.getUserId()) &&
@@ -327,6 +334,9 @@ public class PostService {
         throw new NotAuthorizedException("Only reply owner, post owner and admin can change reply visibility");
       }
       reply.setIsActive(!reply.getIsActive());
+      // replyCount change
+      int countChange = reply.getIsActive() ? 1 : -1;
+      post.setReplyCount(post.getReplyCount()+countChange);
     }
     return postRepository.save(post);
   }

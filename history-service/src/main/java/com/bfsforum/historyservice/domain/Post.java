@@ -16,37 +16,37 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Post {
-	@Id
-	private String id;
+    @Id
+    private String id;
 
-	private String userId;
+    private String userId;
 
-	private String firstName;
+    private String firstName;
 
-	private String lastName;
+    private String lastName;
 
-	private String title;
+    private String title;
 
-	private String content;
+    private String content;
 
-	@Builder.Default
-	private String status = PostStatus.UNPUBLISHED.toString();
-	
-	private LocalDateTime createdAt;
+    @Builder.Default
+    private String status = PostStatus.UNPUBLISHED.toString();
 
-	private LocalDateTime updatedAt;
+    private LocalDateTime createdAt;
 
-	// attachments
-	@Builder.Default
-	private List<String> images = new ArrayList<>();
-	@Builder.Default
-	private List<String> attachments = new ArrayList<>();
-	@Builder.Default
-	private List<Reply> replies = new ArrayList<>();
-	@Builder.Default
-	private Integer viewCount = 0;
-	@Builder.Default
-	private Integer replyCount = 0;
+    private LocalDateTime updatedAt;
+
+    // attachments
+    @Builder.Default
+    private List<String> images = new ArrayList<>();
+    @Builder.Default
+    private List<String> attachments = new ArrayList<>();
+    @Builder.Default
+    private List<Reply> replies = new ArrayList<>();
+    @Builder.Default
+    private Integer viewCount = 0;
+    @Builder.Default
+    private Integer replyCount = 0;
 
 }
 

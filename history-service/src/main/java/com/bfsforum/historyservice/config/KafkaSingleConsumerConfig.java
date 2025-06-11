@@ -19,14 +19,8 @@ import java.util.function.Consumer;
 @Slf4j
 public class KafkaSingleConsumerConfig {
 
-    @Bean("singlePostManager")
-    public RequestReplyManager<Post> singlePostManager() {
-        return new RequestReplyManager<>();
-    }
-
     @Bean
     public Consumer<Message<Post>> postNotificationEventConsumer(
-            @Qualifier("singlePostManager") RequestReplyManager<Post> singlePostManager,
             HistoryService historyService
     ) {
         return message -> {

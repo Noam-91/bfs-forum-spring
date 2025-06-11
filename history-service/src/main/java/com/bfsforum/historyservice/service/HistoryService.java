@@ -34,6 +34,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class HistoryService {
+//    // self injection of the spring proxy, otherwise cache will not work
+//    @Autowired
+//    private HistoryService self;
 
     private final HistoryRepo historyRepo;
     private final StreamBridge streamBridge;
@@ -47,13 +50,6 @@ public class HistoryService {
 
     @Value("${bfs-forum.kafka.request-binding-name}") //Custom value
     private String requestBindingName;
-    /** A wrapper only for test purpose of jap findByUserIdAndPostId method
-     */
-    public Optional<History> getByUserAndPost(String userId, String postId) {
-        return historyRepo.findByUserIdAndPostId(userId, postId);
-    }
-
-
 
     /**
      * Write a history record in DB every time consumes a PostViewedEvent
@@ -90,36 +86,24 @@ public class HistoryService {
 
         // 2) build & send enrichment request
         String correlationId = UUID.randomUUID().toString();
-            // a. create a CompletableFuture and store it
+        // a. create a CompletableFuture and store it
         CompletableFuture<List<Post>> future = requestReplyManager.createAndStoreFuture(correlationId);
-            // b. prepare and send the Kafka request message with correlationId in header
+        // b. prepare and send the Kafka request message with correlationId in header
         Message<List<String>> message = MessageBuilder.withPayload(postIds)
                 .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
                 .build();
         streamBridge.send(requestBindingName, message);
-            // c. wait for the future to complete with a timeout
+        // c. wait for the future to complete with a timeout
         List<Post> repliedPosts = requestReplyManager.awaitFuture(correlationId, future);
-//        PostsEnrichmentRequest req =
-//                new PostsEnrichmentRequest(UUID.randomUUID().toString(), postIds);
-//        ProducerRecord<String, PostsEnrichmentRequest> record =
-//                new ProducerRecord<>("posts-enrichment-request", req);
-//        PostsEnrichmentResponse resp;
-//        try {
-//            // send req and register for a reply
-//            RequestReplyFuture<String, PostsEnrichmentRequest, PostsEnrichmentResponse> future = kafka.sendAndReceive(record);
-//            // block up to 5s until reply arrives
-//            ConsumerRecord<String, PostsEnrichmentResponse> cr = future.get(5, TimeUnit.SECONDS);
-//            // extract the DTO from record
-//            resp = cr.value();
-//        } catch (Exception ex) {
-//            throw new RuntimeException("Failed for getting response from post-service: " + userId, ex);
-//        }
 
         // 3) merge into EnrichedHistoryDto
         // build lookup table for PostDto (key: postId, val: PostDto)
         Map<String, PostDto> postsById = repliedPosts
                 .stream()
-                .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().postId(p.getId()).title(p.getTitle()).content(p.getContent()).build()));
+                .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().content(p.getContent())
+                        .postId(p.getId()).title(p.getTitle())
+                        .firstName(p.getFirstName()).lastName(p.getLastName())
+                        .viewCount(p.getViewCount()).replyCount(p.getReplyCount()).build()));
         // transform raw history to enriched Dtos
         return raw.stream()
                 .filter(h-> postsById.containsKey(h.getPostId()))
@@ -154,7 +138,7 @@ public class HistoryService {
      * Fetch full enriched history then filter by keyword (in title or content)
      */
     public Page<EnrichedHistoryDto> searchByKeyword(String userId, String keyword, Pageable pageable) {
-        try {
+//        try {
             String lower = keyword.toLowerCase();
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
@@ -166,16 +150,16 @@ public class HistoryService {
                     .collect(Collectors.toList());
             return toPage(filtered,pageable);
 
-        } catch (Exception ex) {
-            throw new RuntimeException("Failed for search by keyword: " + userId, ex);
-        }
+//        } catch (Exception ex) {
+//            throw new RuntimeException("Failed for search by keyword: " + userId, ex);
+//        }
     }
 
     /**
      * Filter cached enriched history by bonded startDate and endDate.
      */
     public Page<EnrichedHistoryDto> searchByDate(String userId, LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        try {
+//        try {
             HistoryService proxy = (HistoryService) AopContext.currentProxy();
             List<EnrichedHistoryDto> filtered = proxy.loadFullEnrichedHistory(userId).stream()
                     .filter(dto -> {
@@ -185,10 +169,10 @@ public class HistoryService {
                     })
                     .collect(Collectors.toList());
             return toPage(filtered, pageable);
-        } catch (Exception ex) {
-            throw new RuntimeException(
-                    String.format("Failed for date range search [%s – %s] for user %s",
-                            startDate, endDate, userId), ex);
-        }
+//        } catch (Exception ex) {
+//            throw new RuntimeException(
+//                    String.format("Failed for date range search [%s – %s] for user %s",
+//                            startDate, endDate, userId), ex);
+//        }
     }
 }

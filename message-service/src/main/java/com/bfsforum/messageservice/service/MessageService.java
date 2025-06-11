@@ -72,4 +72,18 @@ public class MessageService {
     message.setUpdatedBy(userId);
     messageDao.save(message);
   }
+
+  /** Get a message by id. Only admins can get messages.
+   * @param id message id
+   * @param userRole user role
+   * @return message
+   * */
+  @Transactional(readOnly = true)
+  public Message getMessageById(String id, String userRole) {
+    if (!userRole.equals("ADMIN") && !userRole.equals("SUPER_ADMIN")) {
+      throw new NotAuthorizedException("Only Admins can get messages");
+    }
+    return messageDao.findById(id)
+        .orElseThrow(() -> new NotFoundException("Message not found"));
+  }
 }
