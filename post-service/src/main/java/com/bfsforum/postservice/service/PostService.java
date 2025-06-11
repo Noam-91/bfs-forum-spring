@@ -103,7 +103,10 @@ public class PostService {
         post.setStatus(post.getStatus());
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
+        return savedPost;
     }
 
     /**
@@ -129,7 +132,11 @@ public class PostService {
         existedpost.setTitle(post.getTitle());
         existedpost.setContent(post.getContent());
         existedpost.setUpdatedAt(LocalDateTime.now());
-        return postRepository.save(existedpost);
+
+        Post savedPost = postRepository.save(existedpost);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
+        return savedPost;
     }
 
     /**
@@ -178,8 +185,11 @@ public class PostService {
 
         // replyCount increment
         post.setReplyCount(post.getReplyCount() + 1);
-        postRepository.save(post);
-        return post;
+
+        Post savedPost = postRepository.save(post);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
+        return savedPost;
     }
 
     public Post transferPostStatus(String postId, String operationStr, String updaterId, String updaterRoleStr) {
@@ -291,7 +301,12 @@ public class PostService {
             default:
                 throw new IllegalArgumentException("Unsupported operation: " + operation);
         }
-        return postRepository.save(post);
+
+        post.setUpdatedAt(LocalDateTime.now());
+        Post savedPost = postRepository.save(post);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
+        return savedPost;
     }
 
     public Post toggleReplyActive(String postId, String replyId, String subReplyId, String updaterId, String updaterRole) {
@@ -329,7 +344,10 @@ public class PostService {
             int countChange = reply.getIsActive() ? 1 : -1;
             post.setReplyCount(post.getReplyCount() + countChange);
         }
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
+        return savedPost;
     }
 
     /**
