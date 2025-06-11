@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -39,7 +39,7 @@ public class HistoryController {
             @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)})
     public ResponseEntity<Page<EnrichedHistoryDto>> getHistory(
             @RequestHeader(name = "X-User-Id") String userId,
-            @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
+            @PageableDefault(page = 0, size = 3)
             Pageable pageable
     ) {
 
@@ -47,16 +47,7 @@ public class HistoryController {
         return ResponseEntity.ok(data);
 
     }
-    //    // test controller for saving a String in db
-//    @PutMapping("/save")
-//    public ResponseEntity<?> saveHistory(
-//            @RequestParam("userId") String userId,
-//            @RequestParam("postId") String postId
-//    ){
-//        System.out.println("History save test start:");
-//        HistoryTest h = historyService.recordViewInString(userId, postId);
-//        return ResponseEntity.ok(h);
-//    }
+
     @GetMapping("/search")
     @Operation(
             summary = "Search viewed history",
@@ -75,11 +66,11 @@ public class HistoryController {
     public ResponseEntity<?> search(
             @RequestHeader("X-User-Id") String userId,
             @RequestParam(required = false) String keyword,
-            @RequestParam(name = "date", required = false)
+            @RequestParam(name = "startDate", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(name = "endDate", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @PageableDefault(page = 0, size = 3, sort = "viewedAt", direction = Sort.Direction.DESC)
+            @PageableDefault(page = 0, size = 3)
             Pageable pageable
     ) {
         // 1. Don’t allow mixing keyword and date-range
