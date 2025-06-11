@@ -68,7 +68,6 @@ public class KafkaConsumerConfig {
 
             UserInfoReply reply = UserInfoReply.builder()
                     .userId(user.getId())
-                    .username(user.getUsername())
                     .firstName(user.getProfile().getFirstName())
                     .lastName(user.getProfile().getLastName())
                     .imgUrl(user.getProfile().getImgUrl())

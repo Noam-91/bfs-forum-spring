@@ -7,7 +7,6 @@ import lombok.Data;
 @Builder
 public class UserInfoReply {
     private String userId;
-    private String username;
     private String firstName;
     private String lastName;
     private String imgUrl;
