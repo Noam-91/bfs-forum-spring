@@ -1,9 +1,4 @@
-package com.bfsforum.postservice.domain;
-
-/**
- * @author luluxue
- * @date 2025-06-06
- */
+package com.bfsforum.historyservice.domain;
 
 public enum PostStatus {
     UNPUBLISHED,  // draft

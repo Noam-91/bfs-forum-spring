@@ -3,10 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
-
 import java.time.LocalDateTime;
-import java.util.UUID;
-
 @Entity
 @Table(name = "history")
 @Getter
@@ -30,9 +27,4 @@ public class History {
     @Column(name = "viewed_at", nullable = false, updatable = false)
     private LocalDateTime viewedAt;
 
-    public History(String userId, String postId, LocalDateTime localDateTime) {
-        this.userId = userId;
-        this.postId = postId;
-        this.viewedAt = localDateTime;
-    }
 }
