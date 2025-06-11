@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -239,5 +240,9 @@ public class UserService {
 
         userRepository.save(user);
         log.info("User successfully activated:: {}", userId);
+    }
+
+    public List<User> getUsersByIds(List<String> userIds) {
+        return userRepository.findAllById(userIds);
     }
 }

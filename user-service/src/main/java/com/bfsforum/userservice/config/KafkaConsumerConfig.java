@@ -5,6 +5,7 @@ import com.bfsforum.userservice.dto.UserInfoReply;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.repository.UserRepository;
 import com.bfsforum.userservice.service.RequestReplyManager;
+import com.bfsforum.userservice.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -15,6 +16,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Consumer;
 
 
@@ -23,14 +25,14 @@ import java.util.function.Consumer;
 public class KafkaConsumerConfig {
 
     private final RequestReplyManager<EmailVerificationReply> requestReplyManager;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final StreamBridge streamBridge;
 
     public KafkaConsumerConfig(RequestReplyManager<EmailVerificationReply> requestReplyManager,
-                               UserRepository userRepository,
+                               UserService userService,
                                StreamBridge streamBridge) {
         this.requestReplyManager = requestReplyManager;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.streamBridge = streamBridge;
     }
 
@@ -56,30 +58,29 @@ public class KafkaConsumerConfig {
     private String userInfoReplyBinding;
 
     @Bean
-    public Consumer<Message<String>> userInfoRequestConsumer() {
+    public Consumer<Message<List<String>>> userInfoRequestConsumer() {
         return message -> {
-            String userId = message.getPayload();
+            List<String> userIds = message.getPayload();
             String correlationId = message.getHeaders().get(KafkaHeaders.CORRELATION_ID, String.class);
 
-            log.info("Received user info request: userId={}, correlationId={}", userId, correlationId);
+            log.info("Received user info request: userId={}, correlationId={}", userIds, correlationId);
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+            List<User> users = userService.getUsersByIds(userIds);
 
-            UserInfoReply reply = UserInfoReply.builder()
+            List<UserInfoReply> replies = users.stream().map(user -> UserInfoReply.builder()
                     .userId(user.getId())
                     .firstName(user.getProfile().getFirstName())
                     .lastName(user.getProfile().getLastName())
                     .imgUrl(user.getProfile().getImgUrl())
-                    .build();
+                    .build()).toList();
 
-            Message<UserInfoReply> replyMessage = MessageBuilder.withPayload(reply)
+            Message<List<UserInfoReply>> replyMessage = MessageBuilder.withPayload(replies)
                     .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
                     .build();
 
             boolean sent = streamBridge.send(userInfoReplyBinding, replyMessage);
             log.debug("Sent reply to topic '{}'? {}", userInfoReplyBinding, sent);
-            log.debug("Reply payload: {}", reply);
+            log.debug("Reply payload: {}", replies);
         };
     }
 }
