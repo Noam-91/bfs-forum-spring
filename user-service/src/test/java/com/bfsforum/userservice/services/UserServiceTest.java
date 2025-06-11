@@ -70,7 +70,7 @@ class UserServiceTest {
     @Test
     void testRegister_success() throws Exception {
         // Arrange
-        UserRegisterMessage dto = new UserRegisterMessage("test", "test123", "admin", "admin", "default.png");
+        UserRegisterMessage dto = new UserRegisterMessage("test", "test123", "admin", "admin");
 
         when(passwordEncoder.encode("test123")).thenReturn("hashedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
@@ -94,7 +94,7 @@ class UserServiceTest {
     @Test
     void testRegister_usernameAlreadyExists() {
         // Arrange
-        UserRegisterMessage dto = new UserRegisterMessage("existingUser", "test123", "admin", "admin", "default.png");
+        UserRegisterMessage dto = new UserRegisterMessage("existingUser", "test123", "admin", "admin");
 
         when(userRepository.existsByUsername("existingUser")).thenReturn(true);
 

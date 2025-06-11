@@ -14,13 +14,6 @@ public interface PostRepository extends MongoRepository<Post, String> {
   @Query("{ 'title' : { '$regex' : ?0, '$options' : 'i' }, 'status' : 'PUBLISHED' }")
   Page<Post> findByTitleContainingAndPublished(String keyword, Pageable pageable);
 
-  @Query("{ 'content' : { '$regex' : ?0, '$options' : 'i' }, 'status' : 'PUBLISHED' }")
-  Page<Post> findByContentContainingAndPublished(String keyword, Pageable pageable);
-
-  /** Search by full name */
-  @Query("{ $and: [ { status: 'PUBLISHED' }, { $expr: { $regexMatch: { input: { $concat: ['$firstName', ' ', '$lastName'] }, regex: ?0, options: 'i' } } } ] }")
-  Page<Post> findByFullNameRegex(String keywordRegex, Pageable pageable);
-
   @Query("{ 'status' : 'PUBLISHED' }")
   Page<Post> findAllPublished(Pageable pageable);
 

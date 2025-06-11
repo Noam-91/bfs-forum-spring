@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Data
@@ -25,6 +26,4 @@ public class UserRegisterMessage {
     @NotBlank(message = "Last name is required")
     private String lastName;
 
-    @NotBlank(message = "Image URL is required")
-    private String imgUrl;
 }
