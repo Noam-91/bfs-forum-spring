@@ -25,11 +25,7 @@ public class Post {
 	@Id
 	private String id;
 
-	private String userId;
-
-	private String firstName;
-
-	private String lastName;
+	private UserInfo userInfo;
 
 	@NotBlank(message = "Title cannot be blank")
 	@Size(min = 1, max = 200, message = "Title must be between 1 and 200 characters")
