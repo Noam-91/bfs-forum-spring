@@ -83,6 +83,6 @@ public class AuthController {
       @RequestHeader(value = "X-User-Id") String userId){
 
     User user = authService.findUserById(userId);
-    return ResponseEntity.ok(user);
+    return ResponseEntity.ok(Map.of("user", user));
   }
 }

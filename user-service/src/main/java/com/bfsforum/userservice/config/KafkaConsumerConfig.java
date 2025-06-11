@@ -61,7 +61,7 @@ public class KafkaConsumerConfig {
             String userId = message.getPayload();
             String correlationId = message.getHeaders().get(KafkaHeaders.CORRELATION_ID, String.class);
 
-            log.info("📥 Received user info request: userId={}, correlationId={}", userId, correlationId);
+            log.info("Received user info request: userId={}, correlationId={}", userId, correlationId);
 
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found: " + userId));
@@ -71,6 +71,7 @@ public class KafkaConsumerConfig {
                     .username(user.getUsername())
                     .firstName(user.getProfile().getFirstName())
                     .lastName(user.getProfile().getLastName())
+                    .imgUrl(user.getProfile().getImgUrl())
                     .build();
 
             Message<UserInfoReply> replyMessage = MessageBuilder.withPayload(reply)
@@ -78,8 +79,8 @@ public class KafkaConsumerConfig {
                     .build();
 
             boolean sent = streamBridge.send(userInfoReplyBinding, replyMessage);
-            log.debug("📤 Sent reply to topic '{}'? {}", userInfoReplyBinding, sent);
-            log.debug("📤 Reply payload: {}", reply);
+            log.debug("Sent reply to topic '{}'? {}", userInfoReplyBinding, sent);
+            log.debug("Reply payload: {}", reply);
         };
     }
 }
