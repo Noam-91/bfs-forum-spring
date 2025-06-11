@@ -43,7 +43,7 @@ class UserControllerTest {
     @Test
     void register_success() throws Exception {
         String userId = UUID.randomUUID().toString(); //  To String
-        UserRegisterMessage req = new UserRegisterMessage("test", "test123","John", "Doe", "img.png");
+        UserRegisterMessage req = new UserRegisterMessage("test", "test123","John", "Doe");
 
         User user = User.builder().id(userId).username("test").build();
         when(userService.usernameExists("test")).thenReturn(false);
