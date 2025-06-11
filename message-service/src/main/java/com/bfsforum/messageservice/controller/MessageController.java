@@ -63,6 +63,23 @@ public class MessageController {
     return ResponseEntity.ok(messages);
   }
 
+  @GetMapping("/{id}")
+  @Operation(summary = "Get Message by ID", description = "Get a message by ID. ADMIN / SUPER_ADMIN required.")
+  @ApiResponse(responseCode = "200", description = "Get message successful",
+      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+      schema = @Schema(implementation = Message.class)))
+  @ApiResponse(responseCode = "400", description = "Bad Request: Get message failed",
+      content = @Content(mediaType = "application/json",
+          schema = @Schema(implementation = ErrorResponse.class)))
+  public ResponseEntity<?> getMessageById(
+      @PathVariable String id,
+      @RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole
+  ) {
+    Message message = messageService.getMessageById(id, userRole);
+    return ResponseEntity.ok(message);
+  }
+
+
   @PatchMapping("/{id}")
   @Operation(summary = "Solve Message", description = "Solve a message. ADMIN / SUPER_ADMIN required.")
   @ApiResponse(responseCode = "200", description = "Solve message successful",
