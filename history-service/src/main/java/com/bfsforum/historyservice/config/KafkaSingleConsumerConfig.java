@@ -29,7 +29,7 @@ public class KafkaSingleConsumerConfig {
             log.info("Received post notification for correlationId {}: {}", correlationId, post);
 
             // Persist the view record
-            historyService.recordView(post.getUserId(), post.getId());
+            historyService.recordView(post.getUserInfo().getUserId(), post.getId());
         };
     }
 }
