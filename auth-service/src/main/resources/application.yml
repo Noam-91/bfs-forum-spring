@@ -13,7 +13,7 @@ spring:
     url: jdbc:mysql://localhost:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: mysql
+    password: 88Yj10hy0326*
   jpa:
     hibernate:
       ddl-auto: update
