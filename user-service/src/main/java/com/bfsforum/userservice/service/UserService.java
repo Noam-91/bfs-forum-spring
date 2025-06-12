@@ -75,7 +75,7 @@ public class UserService {
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .isActive(false)
-                .role(Role.SUPER_ADMIN)
+                .role(Role.USER)
                 .build();
 
         UserProfile profile = UserProfile.builder()

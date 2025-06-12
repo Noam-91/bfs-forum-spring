@@ -35,7 +35,7 @@ app:
       user-info-request: user-info-request
 
 server:
-  port: 0
+  port: 8083
 
 eureka:
   client:

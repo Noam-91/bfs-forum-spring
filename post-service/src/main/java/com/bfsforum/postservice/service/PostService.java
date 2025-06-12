@@ -398,7 +398,6 @@ public class PostService {
 
                 default ->
                     log.warn("Invalid searchIn parameter: {}. Ignoring keyword search.", searchIn);
-
             }
         }
 
