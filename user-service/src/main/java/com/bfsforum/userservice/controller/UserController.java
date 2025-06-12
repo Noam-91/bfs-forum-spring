@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/users")
@@ -37,7 +36,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Create a new user and store profile info.")
@@ -59,7 +57,6 @@ public class UserController {
                 "userId", user.getId().toString()
         ));
     }
-
 
     @GetMapping("/verify")
     @Operation(summary = "Email verification", description = "Activate user verification based on the token in the email verification link")
@@ -87,7 +84,6 @@ public class UserController {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
         }
     }
-
 
     @GetMapping("/{userId}/profile")
     @Operation(summary = "Get user profile", description = "Retrieve profile of the user by ID.")
@@ -158,6 +154,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }
     }
+
     @GetMapping("/page")
     @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users with optional filters.")
     public ResponseEntity<?> getAllUsers(

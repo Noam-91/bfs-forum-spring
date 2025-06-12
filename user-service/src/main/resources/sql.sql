@@ -62,3 +62,11 @@ END;
 //
 DELIMITER ;
 
+
+# ---------Init--------------
+
+insert into user (id, username, password, is_active, role)
+VALUES ('ba5eafc5457711f0950828d0ea3cba49', 'test', '$2a$11$ifPUemlX2TYtI9NVn9tnr.sZ2DyyMQaJW3DqnRVszm0oKyg.Q.FbG', TRUE, 'SUPER_ADMIN');
+
+insert into bfsforum.user_profile (id, user_id, is_active, img_url, first_name, last_name)
+VALUES (REPLACE(UUID(), '-', ''), 'ba5eafc5457711f0950828d0ea3cba49', TRUE, 'test img url', 'Test', 'Admin');
