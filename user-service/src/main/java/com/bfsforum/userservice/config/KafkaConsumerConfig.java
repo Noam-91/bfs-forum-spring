@@ -3,7 +3,6 @@ package com.bfsforum.userservice.config;
 import com.bfsforum.userservice.dto.EmailVerificationReply;
 import com.bfsforum.userservice.dto.UserInfoReply;
 import com.bfsforum.userservice.entity.User;
-import com.bfsforum.userservice.repository.UserRepository;
 import com.bfsforum.userservice.service.RequestReplyManager;
 import com.bfsforum.userservice.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -68,15 +67,15 @@ public class KafkaConsumerConfig {
             List<User> users = userService.getUsersByIds(userIds);
 
             List<UserInfoReply> replies = users.stream().map(user -> UserInfoReply.builder()
-                    .userId(user.getId())
-                    .firstName(user.getProfile().getFirstName())
-                    .lastName(user.getProfile().getLastName())
-                    .imgUrl(user.getProfile().getImgUrl())
-                    .build()).toList();
+                .userId(user.getId())
+                .firstName(user.getProfile().getFirstName())
+                .lastName(user.getProfile().getLastName())
+                .imgUrl(user.getProfile().getImgUrl())
+                .build()).toList();
 
             Message<List<UserInfoReply>> replyMessage = MessageBuilder.withPayload(replies)
-                    .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
-                    .build();
+                .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
+                .build();
 
             boolean sent = streamBridge.send(userInfoReplyBinding, replyMessage);
             log.debug("Sent reply to topic '{}'? {}", userInfoReplyBinding, sent);

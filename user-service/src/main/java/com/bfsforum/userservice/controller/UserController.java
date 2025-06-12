@@ -1,9 +1,6 @@
 package com.bfsforum.userservice.controller;
 
-import com.bfsforum.userservice.dto.EmailVerificationReply;
-import com.bfsforum.userservice.dto.UserProfileDto;
-import com.bfsforum.userservice.dto.UserProfileResponse;
-import com.bfsforum.userservice.dto.UserRegisterMessage;
+import com.bfsforum.userservice.dto.*;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
 import com.bfsforum.userservice.entity.UserProfile;
@@ -21,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 
 import org.springframework.web.bind.annotation.*;
@@ -161,7 +160,7 @@ public class UserController {
     }
     @GetMapping("/page")
     @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users with optional filters.")
-    public ResponseEntity<Map<String, Object>> getAllUsers(
+    public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String username,
@@ -169,34 +168,21 @@ public class UserController {
     ) {
         try {
             Page<User> users = userService.getAllUsers(page, size, username, role);
-
-            List<Map<String, Object>> mergedUsers = users.getContent().stream().map(user -> {
-                Map<String, Object> data = new HashMap<>();
-                data.put("id", user.getId());
-                data.put("username", user.getUsername());
-                data.put("role", user.getRole().name());
-                data.put("isActive", user.isActive());
-
-                UserProfile profile = user.getProfile();
-                if (profile != null) {
-                    data.put("firstName", profile.getFirstName());
-                    data.put("lastName", profile.getLastName());
-                    data.put("imgUrl", profile.getImgUrl());
-                    data.put("createdAt", profile.getCreatedAt());
-                }
-
-                return data;
-            }).toList();
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("content", mergedUsers);
-            response.put("number", users.getNumber());
-            response.put("size", users.getSize());
-            response.put("totalPages", users.getTotalPages());
-            response.put("totalElements", users.getTotalElements());
-
+            List<User> userList = users.getContent();
+            List<UserProfileFlatDto> userDtos = userList.stream()
+                    .map(user -> UserProfileFlatDto.builder()
+                            .id(user.getId())
+                            .username(user.getUsername())
+                            .role(user.getRole().name())
+                            .isActive(user.isActive())
+                            .firstName(user.getProfile().getFirstName())
+                            .lastName(user.getProfile().getLastName())
+                            .imgUrl(user.getProfile().getImgUrl())
+                            .createdAt(user.getProfile().getCreatedAt())
+                            .build())
+                    .toList();
+            Page<UserProfileFlatDto> response = new PageImpl<>(userDtos, PageRequest.of(page, size), users.getTotalElements());
             return ResponseEntity.ok(response);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Unexpected error: " + e.getMessage()));
