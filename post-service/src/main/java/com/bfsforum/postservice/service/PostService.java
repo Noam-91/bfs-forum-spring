@@ -2,6 +2,8 @@ package com.bfsforum.postservice.service;
 
 import com.bfsforum.postservice.dao.PostRepository;
 import com.bfsforum.postservice.domain.*;
+import com.bfsforum.postservice.dto.StatsDto;
+import com.bfsforum.postservice.dto.StatusCountProjection;
 import com.bfsforum.postservice.exception.NotAuthorizedException;
 import com.bfsforum.postservice.exception.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Transactional
 @Service
@@ -427,4 +430,53 @@ public class PostService {
         return new PageImpl<>(posts, pageable, total);
     }
 
+    /**
+     * Calculates and returns statistics about post statuses in the form of a StatsDto.
+     *
+     * @return A StatsDto containing total post count and counts for each status.
+     */
+    public StatsDto getPostStats(String userId, String userRole) {
+        // Check if the user is authorized to view stats
+        if (!userRole.equals(Role.ADMIN.name())&&!userRole.equals(Role.SUPER_ADMIN.name())) {
+            throw new NotAuthorizedException("Only admin or super admin can view post stats");
+        }
+
+        Map<PostStatus, Long> counts = getPostStatusCounts();
+
+        // Sum up all counts to get the total
+        Integer total = counts.values().stream()
+            .mapToInt(Long::intValue)
+            .sum();
+
+        // Build the StatsDto using the retrieved counts and the total
+        return StatsDto.builder()
+            .total(total)
+            .UnpublishedCount(counts.getOrDefault(PostStatus.UNPUBLISHED, 0L).intValue())
+            .PublishedCount(counts.getOrDefault(PostStatus.PUBLISHED, 0L).intValue())
+            .HiddenCount(counts.getOrDefault(PostStatus.HIDDEN, 0L).intValue())
+            .BannedCount(counts.getOrDefault(PostStatus.BANNED, 0L).intValue())
+            .ArchivedCount(counts.getOrDefault(PostStatus.ARCHIVED, 0L).intValue())
+            .DeletedCount(counts.getOrDefault(PostStatus.DELETED, 0L).intValue())
+            .build();
+    }
+
+    private Map<PostStatus, Long> getPostStatusCounts() {
+        // Now calling the MongoDB-specific repository method
+        List<StatusCountProjection> statusCounts = postRepository.countPostsByStatus();
+
+        // Convert the List<StatusCountProjection> into a Map<PostStatus, Long>
+        Map<PostStatus, Long> countsMap = statusCounts.stream()
+            .collect(Collectors.toMap(
+                StatusCountProjection::get_id, // Key: PostStatus enum from _id field
+                StatusCountProjection::getCount  // Value: count
+            ));
+
+        // Optional: Ensure all PostStatus enums are present in the map, even if their count is 0
+        Map<PostStatus, Long> fullCountsMap = new EnumMap<>(PostStatus.class);
+        Arrays.stream(PostStatus.values()).forEach(status ->
+            fullCountsMap.put(status, countsMap.getOrDefault(status, 0L))
+        );
+
+        return fullCountsMap;
+    }
 }

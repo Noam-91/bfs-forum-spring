@@ -36,7 +36,8 @@ public class UserProfile {
     private Instant createdAt;
 
     @Column(name = "img_url", length = 2048)
-    private String imgUrl;
+    @Builder.Default
+    private String imgUrl = "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png";
 
     @Column(name = "first_name")
     private String firstName;
