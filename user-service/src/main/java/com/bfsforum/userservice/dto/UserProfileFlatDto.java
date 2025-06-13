@@ -1,5 +1,6 @@
 package com.bfsforum.userservice.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +16,8 @@ public class UserProfileFlatDto {
     private String id;
     private String username;
     private String role;
-    private boolean isActive;
+    @JsonProperty("isActive")
+    private Boolean isActive;
     private String firstName;
     private String lastName;
     private String imgUrl;

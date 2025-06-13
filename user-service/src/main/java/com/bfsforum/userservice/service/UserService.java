@@ -74,8 +74,8 @@ public class UserService {
                 .id(UUID.randomUUID().toString())
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
-                .isActive(false)
-                .role(Role.SUPER_ADMIN)
+                .isActive(true)
+                .role(Role.UNVERIFIED)
                 .build();
 
         UserProfile profile = UserProfile.builder()

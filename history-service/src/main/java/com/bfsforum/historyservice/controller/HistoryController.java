@@ -48,6 +48,13 @@ public class HistoryController {
 
     }
 
+    @PostMapping("/map/{postId}")
+    public ResponseEntity<?> postMapToHistory(@RequestHeader(name = "X-User-Id") String userId,
+    @PathVariable("postId") String postId){
+        historyService.recordView(userId, postId);
+        return ResponseEntity.ok("History retrieved successfully");
+    }
+
     @GetMapping("/search")
     @Operation(
             summary = "Search viewed history",

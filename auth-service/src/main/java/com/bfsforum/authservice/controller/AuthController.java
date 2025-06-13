@@ -74,7 +74,6 @@ public class AuthController {
       content = @Content(mediaType = "application/json",
           schema = @Schema(implementation = ErrorResponse.class)))
   public ResponseEntity<?> checkAuth(
-      HttpServletResponse response,
       @Parameter(
           name = "userId",
           description = "The ID of the authenticated user, stored in request header",
@@ -83,6 +82,6 @@ public class AuthController {
       @RequestHeader(value = "X-User-Id") String userId){
 
     User user = authService.findUserById(userId);
-    return ResponseEntity.ok(Map.of("user", user));
+    return ResponseEntity.ok(user);
   }
 }

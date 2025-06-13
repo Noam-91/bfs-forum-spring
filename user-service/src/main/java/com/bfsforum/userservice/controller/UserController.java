@@ -103,6 +103,7 @@ public class UserController {
                     .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
             UserProfileResponse response = UserProfileResponse.builder()
+                    .id(user.getId())
                     .username(user.getUsername())
                     .firstName(user.getProfile().getFirstName())
                     .lastName(user.getProfile().getLastName())
@@ -140,7 +141,7 @@ public class UserController {
     public ResponseEntity<Map<String, String>> toggleUserActivation(
         @PathVariable String userId,
         @RequestBody Map<String, Boolean> request) {
-
+        log.debug(request.toString());
         boolean isActive = request.getOrDefault("isActive", false);
         userService.setUserActivation(userId, isActive);
         String message = isActive ? "User activated" : "User deactivated";

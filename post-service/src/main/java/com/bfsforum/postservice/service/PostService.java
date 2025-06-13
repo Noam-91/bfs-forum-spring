@@ -13,9 +13,6 @@ import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,17 +26,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PostService {
     private final PostRepository postRepository;
-    private final StreamBridge streamBridge;
     private final UserInfoAggregator userInfoAggregator;
     private final MongoTemplate mongoTemplate;
 
     @Value("${app.kafka.topics.post-view-notification}")
     private String postViewBindingName;
 
-    public PostService(PostRepository postRepository, StreamBridge streamBridge,
+    public PostService(PostRepository postRepository,
                        UserInfoAggregator userInfoAggregator, MongoTemplate mongoTemplate) {
         this.postRepository = postRepository;
-        this.streamBridge = streamBridge;
         this.userInfoAggregator = userInfoAggregator;
         this.mongoTemplate = mongoTemplate;
     }
@@ -64,12 +59,8 @@ public class PostService {
         post.setViewCount(post.getViewCount() + 1);
         Post savedPost = postRepository.save(post);
 
-        // streamBridge send view event
-        String correlationId = UUID.randomUUID().toString();
-        Message<Post> message = MessageBuilder.withPayload(savedPost)
-            .setHeader(KafkaHeaders.CORRELATION_ID, correlationId)
-            .build();
-        streamBridge.send(postViewBindingName, message);
+        // Integrate UserInfo
+        savedPost = userInfoAggregator.fetchAndIntegrateAllPostsUserInfo(List.of(savedPost)).get(0);
 
         return savedPost;
     }

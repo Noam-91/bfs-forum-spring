@@ -10,10 +10,14 @@ spring:
   application:
     name: message-service
   datasource:
-    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+    url: jdbc:mysql://localhost:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: admin
-    password: bfsForum_2025
+    username: root
+    password: mysql
+  #    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+  #    driver-class-name: com.mysql.cj.jdbc.Driver
+  #    username: admin
+  #    password: bfsForum_2025
   jpa:
     hibernate:
       ddl-auto: update
