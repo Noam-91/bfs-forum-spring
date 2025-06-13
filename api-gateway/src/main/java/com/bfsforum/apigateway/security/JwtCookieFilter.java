@@ -31,7 +31,9 @@ public class JwtCookieFilter implements WebFilter {
     private final List<String> excludedPaths = Arrays.asList(
             "/auth/*",
             "/users/register",
-            "/messages"
+            "/messages",
+            "/files/upload",
+            "/files/download"
     );
     private final PathPatternParser pathPatternParser = new PathPatternParser();
 
