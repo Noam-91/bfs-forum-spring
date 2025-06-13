@@ -1,7 +1,7 @@
 package com.bfsforum.postservice.config;
 
 import com.bfsforum.postservice.domain.Post;
-import com.bfsforum.postservice.dto.UserInfoReply;
+import com.bfsforum.postservice.domain.UserInfo;
 import com.bfsforum.postservice.service.PostService;
 import com.bfsforum.postservice.service.RequestReplyManager;
 import lombok.extern.slf4j.Slf4j;
@@ -19,19 +19,15 @@ import java.util.function.Consumer;
 @Configuration
 @Slf4j
 public class KafkaConsumerConfig {
-  private final PostService postService;
-  private final StreamBridge streamBridge;
 
   @Value("${app.kafka.topics.posts-enrichment-response}")
   private String postEnrichmentResponseBinding;
 
-  public KafkaConsumerConfig(PostService postService, StreamBridge streamBridge) {
-    this.postService = postService;
-    this.streamBridge = streamBridge;
-  }
-
   @Bean
-  public Consumer<Message<List<String>>> postsEnrichmentConsumer() {
+  public Consumer<Message<List<String>>> postsEnrichmentConsumer(
+      PostService postService,
+      StreamBridge streamBridge
+  ) {
     return message -> {
       String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
       try {
@@ -49,13 +45,14 @@ public class KafkaConsumerConfig {
   }
 
   @Bean
-  public Consumer<Message<UserInfoReply>> userInfoEventConsumer(RequestReplyManager<UserInfoReply> requestReplyManager) {
+  public Consumer<Message<List<UserInfo>>> userInfoEventConsumer(
+      RequestReplyManager<List<UserInfo>> requestReplyManager) {
     return message -> {
       log.info("Received userInfo reply");
       String correlationId = (String) message.getHeaders().get(KafkaHeaders.CORRELATION_ID);
       try {
-        UserInfoReply userInfoReply = message.getPayload();
-        requestReplyManager.completeFuture(correlationId, userInfoReply);
+        List<UserInfo> userInfos = message.getPayload();
+        requestReplyManager.completeFuture(correlationId, userInfos);
       } catch (Exception e) {
         log.error("Enrichment failed for request: {}", correlationId, e);
       }

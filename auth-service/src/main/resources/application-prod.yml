@@ -10,10 +10,10 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:mysql://localhost:3306/bfsforum
+    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: mysql
+    username: admin
+    password: bfsForum_2025
   jpa:
     hibernate:
       ddl-auto: update

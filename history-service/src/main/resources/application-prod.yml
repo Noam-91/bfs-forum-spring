@@ -1,0 +1,52 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+
+spring:
+  application:
+    name: history-service
+  datasource:
+    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: admin
+    password: bfsForum_2025
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  kafka:
+    bootstrap-servers: localhost:9092
+  cloud:
+    function:
+      definition: postEnrichRequestEventConsumer;postNotificationEventConsumer
+      bindings:
+        postEnrichRequestEventConsumer-in-0:
+          content-type: application/json
+        postNotificationEventConsumer-in-0:
+          content-type: application/json
+
+    stream:
+      bindings:
+        # 1) Handles the list-of-posts enrichment replies
+        postEnrichRequestEventConsumer-in-0:
+          destination: posts-enrichment-response
+
+        # 2) Listens for single-post notifications
+        postNotificationEventConsumer-in-0:
+          destination: post-view-notification
+
+        # 3) Outbound for your StreamBridge
+        historyEventSender-out-0:
+          destination: posts-enrichment-request
+
+server:
+  port: 0
+
+
+bfs-forum:
+  kafka:
+    request-binding-name: historyEventSender-out-0

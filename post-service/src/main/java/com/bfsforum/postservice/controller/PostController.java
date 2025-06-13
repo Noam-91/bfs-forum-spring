@@ -2,6 +2,7 @@ package com.bfsforum.postservice.controller;
 
 import com.bfsforum.postservice.config.KafkaConsumerConfig;
 import com.bfsforum.postservice.domain.Post;
+import com.bfsforum.postservice.dto.StatsDto;
 import com.bfsforum.postservice.exception.ErrorResponse;
 import com.bfsforum.postservice.service.PostService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -198,5 +199,21 @@ public class PostController {
 		Post updatedPost = postService.toggleReplyActive(postId, replyId, subReplyId, updaterId, updaterRole);
 		return ResponseEntity.ok(updatedPost);
 	}
+
+	@GetMapping("/stats")
+	@Operation(summary = "Get post stats", description = "Get post stats")
+	@ApiResponse(responseCode = "200", description = "Post stats retrieved",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = Post.class)))
+	@ApiResponse(responseCode = "403", description = "Forbidden",
+			content = @Content(mediaType = "application/json",
+					schema = @Schema(implementation = ErrorResponse.class)))
+	public ResponseEntity<?> getPostStats(
+			@RequestHeader(value = "X-User-Id") @Parameter(hidden = true) String userId,
+			@RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole) {
+		StatsDto postStats = postService.getPostStats(userId, userRole);
+		return ResponseEntity.ok(postStats);
+	}
+
 
 }

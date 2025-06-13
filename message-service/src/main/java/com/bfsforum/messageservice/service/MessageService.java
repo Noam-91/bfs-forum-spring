@@ -7,13 +7,12 @@ import com.bfsforum.messageservice.exception.NotAuthorizedException;
 import com.bfsforum.messageservice.exception.NotFoundException;
 import com.bfsforum.messageservice.repository.MessageDao;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Transactional
 @Service
@@ -40,7 +39,7 @@ public class MessageService {
    * @return list of messages
    * */
   @Transactional(readOnly = true)
-  public List<Message> getAllMessages(int page, int size, String userRole) {
+  public Page<Message> getAllMessages(int page, int size, String userRole) {
     if (!userRole.equals("ADMIN") && !userRole.equals("SUPER_ADMIN")) {
       throw new NotAuthorizedException("User is not authorized to get all messages");
     }
@@ -51,7 +50,7 @@ public class MessageService {
         Sort.Order.desc("createdAt")
     );
     Pageable pageable = PageRequest.of(page, size, sort);
-    return messageDao.findAll(pageable).getContent();
+    return messageDao.findAll(pageable);
   }
 
   /** Solve a message. Only admins can solve messages.

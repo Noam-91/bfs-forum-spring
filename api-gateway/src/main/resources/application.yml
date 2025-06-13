@@ -36,6 +36,10 @@ spring:
           uri: lb://message-service
           predicates:
             - Path=/messages/**, /messages
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/files/**
 
   # Spring Security OAuth2 Resource Server Configuration for JWT
   security:

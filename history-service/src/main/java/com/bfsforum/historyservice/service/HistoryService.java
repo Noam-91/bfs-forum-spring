@@ -102,7 +102,7 @@ public class HistoryService {
                 .stream()
                 .collect(Collectors.toMap(Post::getId, p -> PostDto.builder().content(p.getContent())
                         .postId(p.getId()).title(p.getTitle())
-                        .firstName(p.getFirstName()).lastName(p.getLastName())
+                        .firstName(p.getUserInfo().getFirstName()).lastName(p.getUserInfo().getLastName())
                         .viewCount(p.getViewCount()).replyCount(p.getReplyCount()).build()));
         // transform raw history to enriched Dtos
         return raw.stream()

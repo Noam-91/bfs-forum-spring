@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: email-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/bfsforum
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: mysql
+#    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    username: admin
+#    password: bfsForum_2025
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: juanzhao79@gmail.com
+    password: qpgmtndlisqysyju
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  cloud:
+    function:
+      definition: registerNotificationConsumer;verificationRequestConsumer
+    stream:
+      bindings:
+        registerNotificationConsumer-in-0:
+          destination: register-notification
+          group:  ${spring.application.name}
+
+        verificationRequestConsumer-in-0:
+          destination: verification-request
+          group:  ${spring.application.name}
+        verificationResponseSupplier-out-0:
+          destination: verification-response
+
+  kafka:
+    bindings:
+      registerNotificationConsumer-in-0:
+        consumer:
+          auto-offset-reset: earliest
+    bootstrap-servers: localhost:9092
+
+token:
+  expiration:
+    minutes: 10
+
+server:
+  port: 0
+
+app:
+  activation:
+    base-url: http://localhost:8080/email
+  email:
+    from: juanzhao79@gmail.com
+  kafka:
+    binding:
+      verification-response: verification-response
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/

@@ -14,4 +14,5 @@ public class UserInfoReply {
   private String username;
   private String firstName;
   private String lastName;
+  //todo: add imgUrl
 }

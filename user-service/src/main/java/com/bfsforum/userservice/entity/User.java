@@ -32,6 +32,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = false)
     private UserProfile profile;
 }

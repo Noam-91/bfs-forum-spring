@@ -72,10 +72,6 @@ public class AuthService {
    * @return User
    */
   public User findUserById(String userId){
-    Optional<User> userOptional = authDao.findById(userId);
-    if(userOptional.isEmpty()){
-      throw new RuntimeException("User not found");
-    }
-    return userOptional.get();
+    return authDao.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
   }
 }

@@ -1,11 +1,9 @@
 package com.bfsforum.userservice.controller;
 
-import com.bfsforum.userservice.dto.EmailVerificationReply;
-import com.bfsforum.userservice.dto.UserProfileDto;
-import com.bfsforum.userservice.dto.UserProfileResponse;
-import com.bfsforum.userservice.dto.UserRegisterMessage;
+import com.bfsforum.userservice.dto.*;
 import com.bfsforum.userservice.entity.Role;
 import com.bfsforum.userservice.entity.User;
+import com.bfsforum.userservice.entity.UserProfile;
 import com.bfsforum.userservice.exceptions.UserNotFoundException;
 import com.bfsforum.userservice.exceptions.UserProfileNotFoundException;
 import com.bfsforum.userservice.service.UserService;
@@ -20,9 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -56,7 +59,7 @@ public class UserController {
                 "userId", user.getId().toString()
         ));
     }
-    //     "userId": "1cdab9ed-2c09-4d3e-928f-039d6a4abce9",
+
 
     @GetMapping("/verify")
     @Operation(summary = "Email verification", description = "Activate user verification based on the token in the email verification link")
@@ -72,8 +75,14 @@ public class UserController {
                 return ResponseEntity.badRequest().body("Token invalid or not found");
             }
 
+            User user = userService.findById(reply.getUserId())
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
+
             userService.activateVerifiedUser(reply.getUserId(), reply.getExpiredAt());
-            return ResponseEntity.ok("Email verification successful, welcome!");
+            return ResponseEntity.ok(Map.of(
+                    "message", "Email verification successful, welcome!",
+                    "user", Map.of("firstName", user.getProfile().getFirstName())
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Verification failed: " + e.getMessage());
         }
@@ -94,6 +103,7 @@ public class UserController {
                     .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
             UserProfileResponse response = UserProfileResponse.builder()
+                    .id(user.getId())
                     .username(user.getUsername())
                     .firstName(user.getProfile().getFirstName())
                     .lastName(user.getProfile().getLastName())
@@ -131,7 +141,7 @@ public class UserController {
     public ResponseEntity<Map<String, String>> toggleUserActivation(
         @PathVariable String userId,
         @RequestBody Map<String, Boolean> request) {
-
+        log.debug(request.toString());
         boolean isActive = request.getOrDefault("isActive", false);
         userService.setUserActivation(userId, isActive);
         String message = isActive ? "User activated" : "User deactivated";
@@ -149,12 +159,34 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
         }
     }
-
     @GetMapping("/page")
-    @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users.")
-    public ResponseEntity<Page<User>> getAllUsers(@RequestParam(defaultValue = "0") int page,
-                                                  @RequestParam(defaultValue = "10") int size) {
-        Page<User> users = userService.getAllUsers(page, size);
-        return ResponseEntity.ok(users);
+    @Operation(summary = "Get paginated users", description = "Retrieve paginated list of users with optional filters.")
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String role
+    ) {
+        try {
+            Page<User> users = userService.getAllUsers(page, size, username, role);
+            List<User> userList = users.getContent();
+            List<UserProfileFlatDto> userDtos = userList.stream()
+                    .map(user -> UserProfileFlatDto.builder()
+                            .id(user.getId())
+                            .username(user.getUsername())
+                            .role(user.getRole().name())
+                            .isActive(user.isActive())
+                            .firstName(user.getProfile().getFirstName())
+                            .lastName(user.getProfile().getLastName())
+                            .imgUrl(user.getProfile().getImgUrl())
+                            .createdAt(user.getProfile().getCreatedAt())
+                            .build())
+                    .toList();
+            Page<UserProfileFlatDto> response = new PageImpl<>(userDtos, PageRequest.of(page, size), users.getTotalElements());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Unexpected error: " + e.getMessage()));
+        }
     }
 }

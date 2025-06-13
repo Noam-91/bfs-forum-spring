@@ -30,8 +30,10 @@ public class JwtCookieFilter implements WebFilter {
     // Define the paths to exclude from cookie validation
     private final List<String> excludedPaths = Arrays.asList(
             "/auth/*",
-            "/user/register",
-            "/messages"
+            "/users/register",
+            "/messages",
+            "/files/upload",
+            "/files/download"
     );
     private final PathPatternParser pathPatternParser = new PathPatternParser();
 

@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -73,7 +74,7 @@ public class UserService {
                 .id(UUID.randomUUID().toString())
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
-                .isActive(false)
+                .isActive(true)
                 .role(Role.UNVERIFIED)
                 .build();
 
@@ -83,7 +84,6 @@ public class UserService {
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
                 .createdAt(Instant.now())
-                .imgUrl(dto.getImgUrl())
                 .user(user)
                 .build();
 
@@ -97,7 +97,6 @@ public class UserService {
                 .email(saved.getUsername())  // username 即 email
                 .firstName(dto.getFirstName())
                 .lastName(dto.getLastName())
-                .imgUrl(dto.getImgUrl())
                 .build();
 
         streamBridge.send(userRegisterBinding, message);
@@ -154,9 +153,19 @@ public class UserService {
      * @param size Number of users per page.
      * @return Page of users sorted by createdAt (desc).
      */
-    public Page<User> getAllUsers(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return userRepository.findAll(pageable);
+    public Page<User> getAllUsers(int page, int size, String username, String role) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (username != null && !username.isEmpty() && role != null && !role.isEmpty()) {
+            return userRepository.findByUsernameContainingIgnoreCaseAndRole(
+                    username, Role.valueOf(role), pageable);
+        } else if (username != null && !username.isEmpty()) {
+            return userRepository.findByUsernameContainingIgnoreCase(username, pageable);
+        } else if (role != null && !role.isEmpty()) {
+            return userRepository.findByRole(Role.valueOf(role), pageable);
+        } else {
+            return userRepository.findAllOrderByCreatedAt(pageable);
+        }
     }
 
     /**
@@ -217,7 +226,6 @@ public class UserService {
      *
      * @param userId the UUID of the user
      * @param expiresAt the expiration time of the token
-     * @throws RuntimeException if token is expired or user not found
      */
     public void activateVerifiedUser(String userId, Instant expiresAt) {
         if (expiresAt.isBefore(Instant.now())) {
@@ -232,5 +240,9 @@ public class UserService {
 
         userRepository.save(user);
         log.info("User successfully activated:: {}", userId);
+    }
+
+    public List<User> getUsersByIds(List<String> userIds) {
+        return userRepository.findAllById(userIds);
     }
 }

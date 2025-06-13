@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class RequestReplyManager<T> {
     private final Map<String, CompletableFuture<T>> pendingRequests = new ConcurrentHashMap<>();
-    private static final long DEFAULT_TIMEOUT_SECONDS = 10000;      //test
+    private static final long DEFAULT_TIMEOUT_SECONDS = 5;      //test
 
     /**
      * Creates and stores a new CompletableFuture for a given correlation ID.

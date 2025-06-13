@@ -6,6 +6,22 @@ eureka:
 spring:
   application:
     name: history-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/bfsforum
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: mysql
+#    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    username: admin
+#    password: bfsForum_2025
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
   kafka:
     bootstrap-servers: localhost:9092
   cloud:
@@ -23,31 +39,13 @@ spring:
         postEnrichRequestEventConsumer-in-0:
           destination: posts-enrichment-response
 
-
         # 2) Listens for single-post notifications
         postNotificationEventConsumer-in-0:
           destination: post-view-notification
 
-
-
         # 3) Outbound for your StreamBridge
         historyEventSender-out-0:
           destination: posts-enrichment-request
-
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/bfsforum
-    driver: com.mysql.cj.jdbc.Driver
-    username: root
-    password: mysql
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
 
 server:
   port: 0

@@ -12,11 +12,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -59,7 +58,7 @@ public class MessageController {
       @RequestParam(value = "size", defaultValue = "10") int size,
       @RequestHeader(value = "X-User-Role") @Parameter(hidden = true) String userRole
   ) {
-    List<Message> messages = messageService.getAllMessages(page, size, userRole);
+    Page<Message> messages = messageService.getAllMessages(page, size, userRole);
     return ResponseEntity.ok(messages);
   }
 

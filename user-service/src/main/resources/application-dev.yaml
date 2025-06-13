@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/bfsforum
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: mysql
+#    url: jdbc:mysql://bfs-forum.cfe6ym4m0t78.us-east-2.rds.amazonaws.com:3306/bfsforum
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    username: admin
+#    password: bfsForum_2025
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  cloud:
+    function:
+      definition: emailVerificationReplyConsumer; userInfoReplyConsumer; userInfoRequestConsumer
+    stream:
+      bindings:
+        userRegister-out-0:
+          destination: register-notification
+
+        tokenVerify-out-0:
+          destination: verification-request
+
+        emailVerificationReplyConsumer-in-0:
+          destination: verification-response
+
+        userInfoRequestConsumer-in-0:
+          destination: user-info-request
+
+        userInfoReply-out-0:
+          destination: user-info-response
+
+        # demo purpose
+        userInfoRequest-out-0:
+          destination: user-info-request
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+bfs-forum:
+  kafka:
+    user-register-binding-name: userRegister-out-0
+    token-verify-binding-name: tokenVerify-out-0
+    user-info-reply-binding-name: userInfoReply-out-0
+
+server:
+  port: 0
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
