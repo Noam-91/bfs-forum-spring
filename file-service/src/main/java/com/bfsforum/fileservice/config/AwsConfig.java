@@ -12,10 +12,10 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 public class AwsConfig {
 
     @Value("${AWS_ACCESS_KEY_ID}")
-    private String awsAccessKeyId;
+    private String aws1;
 
     @Value("${AWS_SECRET_ACCESS_KEY}")
-    private String awsSecretAccessKey;
+    private String aws2;
 
     @Value("${AWS_REGION}")
     private String awsRegion;
@@ -25,7 +25,7 @@ public class AwsConfig {
         return S3Presigner.builder()
             .region(Region.of(awsRegion))
             .credentialsProvider(StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(awsAccessKeyId, awsSecretAccessKey)
+                AwsBasicCredentials.create(aws1, aws2)
             ))
             .build();
     }
